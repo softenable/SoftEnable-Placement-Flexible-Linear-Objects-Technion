@@ -1,4 +1,4 @@
-# Displacement-Flexible-Linear-Objects
+# Displacement-Flexible-Linear-Objects-Technion
 In this repository, you will find Python program and documentation of the displacement process.
 
 <!--video of simulation-->
