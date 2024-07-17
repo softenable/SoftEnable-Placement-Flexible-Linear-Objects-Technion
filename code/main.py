@@ -7,7 +7,7 @@ import displacement as dis
 
 
 # define LDO parameters, environment parameters and direction displacement
-urdf = "../iiwa14_with_ft_and_dlr_gripper.urdf"# path of the URDF
+urdf = "/home/itay/pythonProject/elastica_scripts/iiwa14_with_ft_and_dlr_gripper.urdf"# path of the URDF
 direction = "right"
 L = 0.3
 mu_fric = 0.1
