@@ -20,7 +20,9 @@ q_start = pin.neutral(model) # q_start should be input parameter
 # define LDO parameters, environment parameters and direction displacement
 direction = "right" 
 L = 0.3 
-mu_fric = 0.1
+mu_1 = 0.5 # the friction coefficient between the phantom and the tray
+mu_2 = 0.1 # the friction coefficient between the tray and the table
+mu_fric = np.min([mu_1, mu_2])
 h_table = 0.0
 alpha = 0.6
 if direction == "right":

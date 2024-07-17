@@ -120,10 +120,10 @@ class Bound:
     z_min - The lower limit of height
     theta_max - The upper limit of theta
     theta_min - The lower limit of theta
-    dx - The step in x
-    dy - The step in y
-    dz - The step in z
-    d_phi_0 - The step in phi
+    dx - The step in X0
+    dy - The step in Y0
+    dz - The step in Z0
+    d_phi_0 - The step in phi_0
     d_theta - The step in theta
     dmu - The step in mu
     dL_gal - The step in L_gal
@@ -134,7 +134,7 @@ class Bound:
     """
 
     def __init__(self, L, direction, gamma, x_max, x_min, y_max, y_min, z_max, z_min, theta_max, theta_min, dx, dy, dz,
-                 d_phi_0, d_theta, dmu, dL_gal, dl, alpha, eps, L_gal_max):
+                 d_phi_0, d_theta, dmu, dL_gal, dl, alpha, L_gal_max):
 
         self.L = L
         self.displacment_diraction = direction
@@ -166,7 +166,6 @@ class Bound:
         self.dL_gal = dL_gal
         self.dl = dl
         self.alpha = alpha
-        self.eps = eps
         self.L_gal_max = L_gal_max
 
 

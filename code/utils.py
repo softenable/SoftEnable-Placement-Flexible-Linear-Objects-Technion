@@ -175,7 +175,8 @@ def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
     x_best
     target
     bound
-    mode
+    mode - indicate related sub-problem 
+    q_start - the joints vector of the robot in the start configuration
 
     Returns
     -------

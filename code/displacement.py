@@ -12,7 +12,7 @@ def displacement(start_1, target_1, target_2, target_3, L, mu_fric, direction, h
     Bound = node_class.Bound(L=L, direction=direction, gamma=gamma, x_max=2, x_min=-2, y_max=2, y_min=-2, z_max=4*L,
                              z_min=h_table, theta_max=np.pi, theta_min=-np.pi, dx=0.01, dy=0.01, dz=0.01*L,
                              d_phi_0=2*np.pi/180, d_theta=2*np.pi/180, dmu=0.01, dL_gal=0.01*L, dl=0.01*L,
-                             alpha=alpha, eps=0.02, L_gal_max=10*L)
+                             alpha=alpha, L_gal_max=10*L)
     Bound.urdf = urdf
 
     # get path for sub-problem 1
