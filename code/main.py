@@ -4,10 +4,20 @@ import matplotlib.pyplot as plt
 import utils as hf
 import node_class
 import displacement as dis
+import sys
+import pinocchio as pin
 
 
 # define LDO parameters, environment parameters and direction displacement
-urdf = "../iiwa14_with_ft_and_dlr_gripper.urdf"# path of the URDF
+urdf = r"C:\Users\ronil\2D_ElasticRod_Steering_python\iiwa14_with_ft_and_dlr_gripper.urdf"# path of the URDF
+urdf_filename = (
+        urdf
+        if len(sys.argv) < 2
+        else sys.argv[1]
+    )
+model = pin.buildModelFromUrdf(urdf_filename)
+q_start = pin.neutral(model)
+
 direction = "right"
 L = 0.3
 mu_fric = 0.1
@@ -47,7 +57,7 @@ target_3 = node_class.Target(target_2.X0, target_2.Y0, target_2.Z0, phi_0_T2, ta
 # get full path
 t_start = time.time()
 
-path = dis.displacement(start_1, target_1, target_2, target_3, L, mu_fric, direction, h_table, alpha, urdf)
+path = dis.displacement(start_1, target_1, target_2, target_3, L, mu_fric, direction, h_table, alpha, urdf, q_start)
 
 if path:
     path_1, path_2, path_3 = path
@@ -58,9 +68,9 @@ if path:
     t = np.linspace(0, 1, num_t)
     s = np.linspace(0, 1, num_t)
 
-    x1, y1, z1, phi_l_1, theta_1, l1, q1 = hf.get_smooth_path_displacement(path_1, skip, t, L, direction, urdf)
-    x2, y2, z2, phi_l_2, theta_2, l2, q2 = hf.get_smooth_path_displacement(path_2, skip, t, L, direction, urdf)
-    x3, y3, z3, phi_l_3, theta_3, l3, q3 = hf.get_smooth_path_displacement(path_3, skip, t, L, direction, urdf)
+    x1, y1, z1, phi_l_1, theta_1, l1, q1 = hf.get_smooth_path_displacement(path_1, skip, t, L, direction, urdf, path_1[0].jointsPose)
+    x2, y2, z2, phi_l_2, theta_2, l2, q2 = hf.get_smooth_path_displacement(path_2, skip, t, L, direction, urdf, path_2[0].jointsPose)
+    x3, y3, z3, phi_l_3, theta_3, l3, q3 = hf.get_smooth_path_displacement(path_3, skip, t, L, direction, urdf, path_3[0].jointsPose)
 
     t_end = time.time()
     ExecutionTime1_2_3 = t_end - t_start

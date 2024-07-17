@@ -128,7 +128,7 @@ def where_to_put_neighbor(neighbor, open_list):
     return index_a
 
 
-def get_neighbor(neighbor, open_list, close_list, bound, mode):
+def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
     """
     What the function do
     ____________________
@@ -147,7 +147,7 @@ def get_neighbor(neighbor, open_list, close_list, bound, mode):
     -------
     Sorted open and close lists
     """
-    if check_node_disp(neighbor, bound, mode):
+    if check_node_disp(neighbor, bound, mode, q_start):
         if not check_in_list(neighbor, close_list, bound):
             index = check_in_list(neighbor, open_list, bound)
             if index:
@@ -161,7 +161,7 @@ def get_neighbor(neighbor, open_list, close_list, bound, mode):
     return open_list, close_list
 
 
-def get_star(x_best, open_list, close_list, bound, target, mode):
+def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
     """
     What the function do
     ____________________
@@ -252,11 +252,11 @@ def get_star(x_best, open_list, close_list, bound, target, mode):
                              x_best.l - bound.dl, x_best, bound.L, bound.alpha, bound.displacment_diraction)
         neighbors = [n1, n2, n3, n4, n5, n6]
     for n in neighbors:
-        open_list, close_list = get_neighbor(n, open_list, close_list, bound, mode)
+        open_list, close_list = get_neighbor(n, open_list, close_list, bound, mode, q_start)
     return open_list, close_list
 
 
-def check_node_disp(node, Bound, mode):
+def check_node_disp(node, Bound, mode, q_start):
     """
      What the function do
     ____________________
@@ -297,12 +297,12 @@ def check_node_disp(node, Bound, mode):
         print("somthing straing!")
         check = 0
     if check:
-        check, q = IKFromURDF(Bound.urdf, node)
+        check, q = IKFromURDF(Bound.urdf, node, q_start)
         node.jointsPose = q
     return check
 
 
-def get_smooth_path_displacement(path, skip, t, L, direction, urdf):
+def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
     """
     What the function do
     ____________________
@@ -369,7 +369,7 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf):
             ls.append(line[3])
             node = node_class.JointNode(XL=xs[-1][-1], YL=ys[-1][-1], ZL=zs[-1][-1], phi_L=phi_l_s[-1],
                                         theta=line[5], father=Node[-1])
-            check, q_temp = IKFromURDF(urdf, node)
+            check, q_temp = IKFromURDF(urdf, node, q_start)
             q.append(q_temp.tolist())
             node.jointsPose = q_temp
             Node.append(node)
@@ -421,7 +421,7 @@ def get_gripper_path(x, y, z, phi_L, theta):
     return P, R
 
 
-def IKFromURDF(urdf:str, node):
+def IKFromURDF(urdf:str, node, q_start):
     """
     What the function do
     ____________________
@@ -457,7 +457,7 @@ def IKFromURDF(urdf:str, node):
     if node.father:
         q = node.father.jointsPose
     else:
-        q = pin.neutral(model) # need to get from the robot joint the initial position
+        q = q_start # need to get from the robot joint the initial position
     # print("q: %s" % q.T)
 
     eps = 1e-4
