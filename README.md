@@ -8,12 +8,6 @@ In this repository, you will find Python program and documentation of the displa
 </p>
 
 
-
-
-
-
-
-
 <p align="center">
 <video src="https://github.com/user-attachments/assets/bf3fd472-4bab-492f-893b-39e2a46ccf40
 " alt="" width="33%">
@@ -40,7 +34,7 @@ In this repository, you will find Python program and documentation of the displa
 <a id="top"></a>
 ### Contents
 1. [Introduction](#1.0)
-2. [Environment Setup](#2.0)
+2. [Environment Setup + Code Documentation](#2.0)
 3. [Theoretical Background](#3.0)
 4. [Testing and Review](#4.0)
 
@@ -62,6 +56,22 @@ In this repository, you will find Python program and documentation of the displa
 <a name="1.0"></a>
 ### 1. Introduction
 
+The proposed repository focuses on the three subproblems of the displacement process.  For the development of this Python library, we used the **elastica** as our model, which is explained in detail below.  
+
+##### Objective
+
+In order to place the DO effectively, precise manner and without damage or distortions, we need to make a controlled and well-planned movement.
+As part of our work, we proposed a novel approach to shape control of deformable elongated linear objects which could have potential applications in the handling of fish.
+This is a challenging problem since it requires an online analysis of the current setting of the environment and the current capabilities of the agent. In addition, it requires an integration of high-level task planning and low-level motion planning. 
+
+Within the context of this, the displacement cycle can be divided into the following tasks:
+
+* Bring the DO from the transportation process target to the stabbing point with the tray.
+* Getting the DO ready for rolling so that its edge does not slip from the tray and the tray does not slip on the surface.
+* Pure rolling of the DO until it is placed.
+
+##### Relevance
+Manipulation of flexible cables is relevant to both industrial and household environments. 
 
 
 
@@ -70,7 +80,7 @@ In this repository, you will find Python program and documentation of the displa
 <!--<div style="text-align:left;">
   <span style="font-size: 1.4em; margin-top: 0.83em; margin-bottom: 0.83em; margin-left: 0; margin-right: 0; font-weight: bold;"> 2. Environment Setup</span><span style="float:right;"><a href="#top">Back to Top</a></span>
 </div>-->
-### 2. Environment Setup
+### 2. Environment Setup + Code Documentation
 
 ------------
 
