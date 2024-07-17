@@ -8,7 +8,6 @@ import sys
 import pinocchio as pin
 
 
-# define LDO parameters, environment parameters and direction displacement
 urdf = r"C:\Users\ronil\2D_ElasticRod_Steering_python\iiwa14_with_ft_and_dlr_gripper.urdf"# path of the URDF
 urdf_filename = (
         urdf
@@ -16,10 +15,11 @@ urdf_filename = (
         else sys.argv[1]
     )
 model = pin.buildModelFromUrdf(urdf_filename)
-q_start = pin.neutral(model)
+q_start = pin.neutral(model) # q_start should be input parameter
 
-direction = "right"
-L = 0.3
+# define LDO parameters, environment parameters and direction displacement
+direction = "right" 
+L = 0.3 
 mu_fric = 0.1
 h_table = 0.0
 alpha = 0.6
