@@ -88,17 +88,43 @@ The framework code is the pipeline of the planner, “main.py”. In this file t
 
 The planner, “dispalcement.py” file, consists of three parts, the division was defined according to the three sub-problems: sub-problem one is to take the object to the “stabbing point” which is the first point the object touches the tray. The input is the object's current position, and the target is the “stabbing point”. 
 
+<p align="center">
+<img src="Readme_images/stabbing_point_real.png" alt="" width="33%">
+<img src="Readme_images/stabbing_point_sim.png" alt="" width="33%">
+<br>
+<sup><b>Fig. 1&nbsp;&nbsp;At the right the releasing point at the simulation. At the left the releasing point on the real robot</b></sup>
+</p>
 
 As part of sub-problem two, we plan the trajectory of the gripper as the object bends so that it stays on the tray only touching the "stabbing point". The gripper lowers the height while the object is bends at one end and at the other end remains in the same orientation. 
 
+<p align="center">
+<img src="Readme_images/bending_object_real.png" alt="" width="33%">
+<img src="Readme_images/bending_object_sim.png" alt="" width="33%">
+<br>
+<sup><b>Fig. 2&nbsp;&nbsp; At the right the bending object at the simulation. At the left the bending object on the real robot.</b></sup>
+</p>
+
 Sub-problem three is a pure rolling of the object on the tray without slides of the tray or the object. 
 
-
+<p align="center">
+<img src="Readme_images/starting_point_of_the_pure_rolling_real.png" alt="" width="33%">
+<img src="Readme_images/starting_point_of_the_pure_rolling_sim.png" alt="" width="33%">
+<br>
+<sup><b>Fig. 3&nbsp;&nbsp;At the right the starting point of the pure rolling at the simulation. At the left the starting point of the pure rolling on the real robot. </b></sup>
+</p>
 
 When the object is placed on the tray, sub-problem three ends. We can call this point the “release point”. 
 
+<p align="center">
+<img src="Readme_images/releasing_point_real.png" alt="" width="33%">
+<img src="Readme_images/releasing_point_sim.png" alt="" width="33%">
+<br>
+<sup><b>Fig. 4&nbsp;&nbsp;At the right the releasing point at the simulation. At the left the releasing point on the real robot</b></sup>
+</p>
 
-Along with the planner script we provide a utils which consist all the help functions the planner use. I will briefly describe some important functions the file contains. Frist, get shape function which give us the elastica shape of the cable.  Second, det neighbour function decides whether the current neighbour is acceptable and put it in the right place in the array and get star which is the A* algorithm for the current sub-problem.  The last python file is the “node.py” which includes the types of class we use at the code.   
+Along with the planner script we provide utils that consist all the help functions the planner use. I will briefly describe some important functions the file contains. First, get shape function which give us the elastica shape of the cable.  Second, get neighbour function decides whether the current neighbour is acceptable and put it in the right place in the array and get star which is the A* algorithm for the current sub-problem.  
+
+The last Python file is the “node.py” which includes the types of classes we use in the code.   
 
 ------------
 
