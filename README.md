@@ -81,6 +81,22 @@ Manipulation of flexible cables is relevant to both industrial and household env
   <span style="font-size: 1.4em; margin-top: 0.83em; margin-bottom: 0.83em; margin-left: 0; margin-right: 0; font-weight: bold;"> 2. Environment Setup</span><span style="float:right;"><a href="#top">Back to Top</a></span>
 </div>-->
 ### 2. Environment Setup + Code Documentation
+#### 2.1 Environment Setup
+
+#### 2.2 Code Documentation
+The planner, “dispalcement.py” file, consists of three parts, the division was defined according to the three sub-problems: sub-problem one is to take the object to the “stabbing point” which is the first point the object touches the tray. The input is the object's current position, and the target is the “stabbing point”. 
+
+
+As part of sub-problem two, we plan the trajectory of the gripper as the object bends so that it stays on the tray only touching the "stabbing point". The gripper lowers the height while the object is bends at one end and at the other end remains in the same orientation. 
+
+Sub-problem three is a pure rolling of the object on the tray without slides of the tray or the object. 
+
+
+
+When the object is placed on the tray, sub-problem three ends. We can call this point the “release point”. 
+
+
+Along with the planner script we provide utils which consist all the help functions the planner uses. I will briefly describe some important functions the file contains. First, get shape function which gives us the elastica shape of the cable.  
 
 ------------
 
