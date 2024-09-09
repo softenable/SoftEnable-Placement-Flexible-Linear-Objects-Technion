@@ -84,6 +84,8 @@ Manipulation of flexible cables is relevant to both industrial and household env
 #### 2.1 Environment Setup
 
 #### 2.2 Code Documentation
+The framework code is the pipeline of the planner, “main.py”. In this file the user defines all the variables and the parameters given as **inputs**, it could be an auto script that read the callbacks like sensor or the camera and fills in the fields. For example, the URDF of the robot, physical properties of the object like length, friction coefficient etc. After that the planner, which describes later, is called and returns as path planning trajectory. In addition, the trajectory is very noisy, so we smooth it.  In the end, we get as an **output** the figures of linear object path. 
+
 The planner, “dispalcement.py” file, consists of three parts, the division was defined according to the three sub-problems: sub-problem one is to take the object to the “stabbing point” which is the first point the object touches the tray. The input is the object's current position, and the target is the “stabbing point”. 
 
 
@@ -96,7 +98,7 @@ Sub-problem three is a pure rolling of the object on the tray without slides of 
 When the object is placed on the tray, sub-problem three ends. We can call this point the “release point”. 
 
 
-Along with the planner script we provide utils which consist all the help functions the planner uses. I will briefly describe some important functions the file contains. First, get shape function which gives us the elastica shape of the cable.  
+Along with the planner script we provide a utils which consist all the help functions the planner use. I will briefly describe some important functions the file contains. Frist, get shape function which give us the elastica shape of the cable.  Second, det neighbour function decides whether the current neighbour is acceptable and put it in the right place in the array and get star which is the A* algorithm for the current sub-problem.  The last python file is the “node.py” which includes the types of class we use at the code.   
 
 ------------
 
