@@ -87,6 +87,19 @@ The project uses ROS2 Humble Hawksbill running on Ubuntu 22.04 LTS (Jammy Jellyf
 
 #### 2.2 Code Documentation
 The framework code is the pipeline of the planner, “main.py”. In this file the user defines all the variables and the parameters given as **inputs**, it could be an auto script that reads the callbacks like sensor or the camera and fills in the fields. For example, the URDF of the robot, physical properties of the object like length, friction coefficient etc. After that the planner, which is described later, is called and returns as path planning trajectory. In addition, the trajectory is very noisy, so we smooth it. In the end, we get as **outputs** the **robot joints pose** and **figures of linear object path**. 
+The pipeline of the script performs the following: 
+
+  1. Definition of all the input of the problem – by the user or by callbacks
+<br />**Input**: URDF (robot model), start position, target positions, friction coefficients, tray hight, direction of rolling. 
+  3. Defines the boundaries of the problem based on the inputs. It’s including the robot model. 
+  4. Computes the trajectory for sub-problem one. 
+  5. Computes the trajectory for sub-problem two. 
+  6. Computes the trajectory for sub-problem three. 
+  <br /> During the path check we make sure the path in valid in terms of C-space and IK. 
+  7. Make a smooth trajectory. We can decide how smooth it can be.
+  8. Computes the position and orientation of the EE
+  9. Returns the total trajectory.
+  <br /> **Output**: total trajectory, robot joint positions.
 
 The planner, “dispalcement.py” file, consists of three parts, the division was defined according to the three sub-problems: sub-problem one is to take the object to the “stabbing point” which is the first point the object touches the tray. The input is the object's current position, and the target is the “stabbing point”. 
 
