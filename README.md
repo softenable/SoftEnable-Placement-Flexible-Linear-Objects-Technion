@@ -133,7 +133,27 @@ The last Python file is the “node.py” which includes the types of classes we
 <span style="font-size: 1.4em; margin-top: 0.83em; margin-bottom: 0.83em; margin-left: 0; margin-right: 0; font-weight: bold;">3. Theoretical Background</span><span style="float:right;"><a href="#top">Back to Top</a></span>
 </div>-->
 
-### 3. Theoretical Background
+### 3. Theoretical Background - Shape Control of Deformable Elongated Linear Objects
+#### 3.1 Flexible Cable Mechanics
+This section describes the Euler’s Elastica solutions for DLO equilibrium shapes, the Elastica shape parameters, then the configuration space associated with these parameters. Euler’s Elastica solutions: The flexible cable equilibrium shapes are obtained by solving an optimal control problem. In two-dimensions, we assume an inextensible flexible cable of length $L$ parameterized by $(x(s),y(s))$ for $s\in[0,L]$. The cable’s state variables are its $(x(s),y(s))$ coordinates and its tangent direction $\phi(s)$, forming the state vector.
+The curvature of the cable under arclength parametrization is $\kappa(s)=\frac{d\phi}{ds}$, which serves as a continuous piecewise smooth control input,$ u(s) = \kappa (s) $, for the cable system equations
+
+$$\dot S (s)=(\dot x \dot y \dot\phi)=(\cos\phi(s) \\ \sin\phi(s) \\ u(s))$$ (1)
+                            
+The cable shape, parameterized by arclength in Eq. (1), is determined by its curvature as control input. When the flexible cable modelled as an elastic rod has no external influences such as gravity acting on it, its total elastic energy is given by 
+
+$$\varepsilon= \frac{1}{2}EI\int_0^L\kappa ^2(s)ds $$ (2)
+
+Where $E>0$ is Young’s modulus of elasticity and $I>0$ is the cable cross-sectional second moment of inertia [2]. The cable stiffness, $EI$, is a known parameter.  When the cable is fixed at the endpoint position and tangents, 
+$S(0) =(x(0),y(0),ϕ(0))$ and $S(L)=(x(L),y(L),ϕ(L))$, the flexible cable locally stable shapes form local minima of $varepsilon$, subject to the endpoint constraints and the cable fixed length constraint described by Eq. (1). As 
+$varepsilon$ represents bending energy that increases continuously with increasing cable curvature (until reaching plastic yield limit), there always exist stable cable shapes that satisfy the fixed endpoint positions and tangents. The Hamiltonian [2],[3] of the cable system defined by Eq. (1) and the elastic energy, Eq. (2), is given by
+
+$$H(S,\lambda, u) = \lambda_x \cdot \cos\phi(s) + \lambda_y \cdot \sin\phi(s) + \lambda_\phi \cdot u + \frac{1}{2}EI \cdot u^2)$$
+
+are the _costate variables_. The costate $\lambda_x, \lambda_y, \lambda_\phi$ correspond to internal force and bending moment along the flexible cable. 
+
+#### 2.2 The Flexible Configuration Space
+This section characterizes the set of Elastica parameters that ensure stability and non-self-intersection of the flexible cable equilibrium shapes in two dimensions.
 
 
 ------------
