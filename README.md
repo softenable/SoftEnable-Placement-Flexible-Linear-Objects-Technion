@@ -82,6 +82,8 @@ Manipulation of flexible cables is relevant to both industrial and household env
 </div>-->
 ### 2. Environment Setup + Code Documentation
 #### 2.1 Environment Setup
+The project uses ROS2 Humble Hawksbill running on Ubuntu 22.04 LTS (Jammy Jellyfish) and Python 3.10.
+
 
 #### 2.2 Code Documentation
 The framework code is the pipeline of the planner, “main.py”. In this file the user defines all the variables and the parameters given as **inputs**, it could be an auto script that reads the callbacks like sensor or the camera and fills in the fields. For example, the URDF of the robot, physical properties of the object like length, friction coefficient etc. After that the planner, which is described later, is called and returns as path planning trajectory. In addition, the trajectory is very noisy, so we smooth it. In the end, we get as **outputs** the **robot joints pose** and **figures of linear object path**. 
@@ -142,7 +144,7 @@ $$\dot S (s)=(\dot x \dot y \dot\phi)=(\cos\phi(s) \\ \sin\phi(s) \\ u(s))$$ (1)
                             
 The cable shape, parameterized by arclength in Eq. (1), is determined by its curvature as control input. When the flexible cable modelled as an elastic rod has no external influences such as gravity acting on it, its total elastic energy is given by 
 
-$$\varepsilon= \frac{1}{2}EI\int_0^L\kappa ^2(s)ds $$ (2)
+$$\varepsilon= \frac{1}{2}EI\int_0^L\kappa ^2(s)ds$$ (2)
 
 Where $E>0$ is Young’s modulus of elasticity and $I>0$ is the cable cross-sectional second moment of inertia [2]. The cable stiffness, $EI$, is a known parameter.  When the cable is fixed at the endpoint position and tangents, 
 $S(0) =(x(0),y(0),ϕ(0))$ and $S(L)=(x(L),y(L),ϕ(L))$, the flexible cable locally stable shapes form local minima of $varepsilon$, subject to the endpoint constraints and the cable fixed length constraint described by Eq. (1). As 
@@ -151,6 +153,15 @@ $varepsilon$ represents bending energy that increases continuously with increasi
 $$H(S,\lambda, u) = \lambda_x \cdot \cos\phi(s) + \lambda_y \cdot \sin\phi(s) + \lambda_\phi \cdot u + \frac{1}{2}EI \cdot u^2)$$
 
 are the _costate variables_. The costate $\lambda_x, \lambda_y, \lambda_\phi$ correspond to internal force and bending moment along the flexible cable. 
+
+<p align="center">
+<img src="Readme_images/elastica_shape_physical_flexible_cable.png" alt="" width="33%">
+<br>
+<sup><b>Fig. 4&nbsp;&nbsp; Top view of full period elastica shape with the physical flexible cable of length L embedded in its periodic elastica solution of length  \Tilda{L}.  The elastica axis with angle \phi_0 passes through the zero curvature points and is parallel to the opposing forces of magnitude \math{\lambda_r} applied at cable endpoints.
+</b></sup>
+</p>
+
+
 
 #### 2.2 The Flexible Configuration Space
 This section characterizes the set of Elastica parameters that ensure stability and non-self-intersection of the flexible cable equilibrium shapes in two dimensions.
