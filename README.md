@@ -9,9 +9,12 @@ In this repository, you will find Python program and documentation of the displa
 
 
 <p align="center">
-<video src="https://github.com/user-attachments/assets/bf3fd472-4bab-492f-893b-39e2a46ccf40
+<video src="https://github.com/user-attachments/assets/5eca098e-1e38-451b-a6f9-014bcfdb1c73
 " alt="" width="33%">
 </p>
+
+
+
 
 
 <p align="center">
@@ -194,7 +197,7 @@ where $s_{gal} \in [s_1, s_2]$ is the physical length of the object that satisfi
 The Hamilton function is defined by 
 
 <p align="center">
-<img src="Readme_images/eq1.png" alt="" width="33%">
+<img src="Readme_images/eq1.png" alt="" width="50%">
 </p>
 
 Where $\lambda \in \mathbb{R}^3$ is costate vector that presents the internal forces and moment along the object, and $\mu$ is Lagrange multiplayer related to the constraint function. 
