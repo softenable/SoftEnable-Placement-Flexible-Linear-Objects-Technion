@@ -297,29 +297,123 @@ The next figure will illustrate the problem of placing the flexible object using
 </div>-->
 
 ### 4. Testing and Review
-
-
+#### simulation
+  
 <!--video of simulation-->
 
 <p align="center">
 <b><i>The displacement process</i></b>
 </p>
-
-
 <p align="center">
 <video src="https://github.com/user-attachments/assets/bf3fd472-4bab-492f-893b-39e2a46ccf40
 " alt="" width="33%">
 </p>
 
 
+#### Real robot - UR5E
+
+**food products**
+
+In all the experiments we used silicon phantoms:
+
+ 
+<p align="center">
+<b><i>Beef</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/5eca098e-1e38-451b-a6f9-014bcfdb1c73
+" alt="" width="33%">
+</p>
+
+  
+
+<p align="center">
+<b><i>Salmon</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/eb6c07fd-ebbc-4124-a11f-226fbfd03cb8" alt="" width="33%">
+</p>
+
+<p align="center">
+<b><i>Bass Experiments</i></b>
+</p> 
+
+In the bass phantom experiments, we try 2 orientations and with and without line contact:
+
+<p align="center">
+<b><i>Bass</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/cef23571-b38c-4a93-95b7-f77f33916331" alt="" width="33%">
+</p>
 
 
 
+<p align="center">
+<b><i>Bass with line contact</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/39823e9c-1318-4eb2-80d9-c6d2d65205c0" alt="" width="33%">
+</p>
 
 
 
+<p align="center">
+<b><i>Bass with line contact</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/66efc640-4971-471b-a569-83917e2fafe2" alt="" width="33%">
+</p>
 
 
+<p align="center">
+<b><i>Bass without line contact</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/fa5021b7-d585-4994-966d-d504de9b74e3" alt="" width="33%">
+</p>
+
+
+<p align="center">
+<b><i>Yellow cheese</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/872e7995-6d88-4055-8ddf-aaa9e737b733" alt="" width="33%">
+</p>
+
+**clothes products**
+
+In the experiments, we used a sports T-shirt and a towel:
+
+
+<p align="center">
+<b><i>Towel</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/8f9e67cd-7741-44d0-8f97-4335a82aa863" alt="" width="33%">
+</p>
+
+
+<p align="center">
+<b><i>Sports T-shirt with line contacts</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/0c597d41-a18e-4bae-a914-b6cbc1bfb530" alt="" width="33%">
+</p>
+
+
+**More products**
+
+In the experiment, we used an electrical cable:
+
+
+<p align="center">
+<b><i>Electrical cable</i></b>
+</p>
+<p align="center">
+<video src="https://github.com/user-attachments/assets/2d489242-f3f6-418e-b5a0-8a2ce30b3d22
+" alt="" width="33%">
+</p>
 
 
 
