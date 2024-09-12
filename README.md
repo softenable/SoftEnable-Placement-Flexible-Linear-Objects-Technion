@@ -195,37 +195,10 @@ The Hamilton function is defined by
 
 $$ H = ____$$
 
-Where $\lambda \in \mathbb{R}^3$ is costate vector that presents the internal forces and moment along the object, and 
-
- is Lagrange multiplayer which is related to the constraint function. From the optimality condition 
-
- 
- We get the famous Euler-Bernoli bending-moment law 
-
+Where $\lambda \in \mathbb{R}^3$ is costate vector that presents the internal forces and moment along the object, and $\mu$ is Lagrange multiplayer related to the constraint function. 
+From the optimality condition $\frac{\partial H}{\partial u^*}=0$ We get the famous Euler-Bernoli bending-moment law $\lambda_\phi (s)=-EIu(s)=-EI\kappa (s)$.
 In Eq (4), the Hamiltonian contains the upper part without the constraint and the lower part is the augmented Hamiltonian that includes the constraint. The difficulty in solving the adjoint equation of the augmented Hamiltonian is the calculation of μ(s). Therefore, we will use the solution we obtained (in the second paper) for the case that does not include the constraint, and we will denote the solution as 
-
- 
-. From Eq (3), it can be understood that in the part where the constraint is active, the shape of the flexible body is a   
-
-
-
-straight line that aligns with the table/tray. Therefore, we calculate the shape of the flexible body in the part where the constraint is active as a straight line using Eq (3). 
-
-Furthermore, from Eq (3), it can be understood that the curvature is identically equal to zero when the constraint is active. Additionally, the optimality condition 
-
-holds both when the constraint is active and when the constraint is not active; therefore, the Euler-Bernoulli bending moment law holds for all s ∈ [0, L]. We will utilize this property in addition to the physical understanding that the moment 
-
- along the flexible body must remain continuous as long as no external point moment is applied. Therefore, when the stiffness 
-
- 
-is continuous, it can be understood that the entry and exit conditions from the constraint are zero curvature at the edges of 
-
-. Also, we know that the curvature of the Elastica is equal to zero when 
-
-
- 
-. Thus, the shape calculation divides into a straight line when the constraint is active, and Elastica that begins at 
- when the constraint is not active, where the length of the Elastica is the length of the flexible body L minus the length of the constraint, denoted as 
+$S(s)=(x(s),y(s),ϕ(s))=\psi (k,s_0,L_{gal})$. From Eq (3), it can be understood that in the part where the constraint is active, the shape of the flexible body is a straight line that aligns with the table/tray. Therefore, we calculate the shape of the flexible body in the part where the constraint is active as a straight line using Eq (3). Furthermore, from Eq (3), it can be understood that the curvature is identically equal to zero when the constraint is active. Additionally, the optimality condition $\frac{\partial H}{\partial u^*}=0$ holds both when the constraint is active and when the constraint is not active; therefore, the Euler-Bernoulli bending moment law holds for all $s \in [0, L]$. We will utilize this property in addition to the physical understanding that the moment $\lambda_\phi(s)$ along the flexible body must remain continuous as long as no external point moment is applied. Therefore, when the stiffness $EI$ is continuous, it can be understood that the entry and exit conditions from the constraint are zero curvature at the edges of $s_{gal}$. Also, we know that the curvature of the Elastica is equal to zero when $s+s_0 = L_{gal}/4 or 3L_{gal}/4$. Thus, the shape calculation divides into a straight line when the constraint is active, and Elastica that begins at $s_0 = L_{gal}/4 or 3L_{gal}/4$ when the constraint is not active, where the length of the Elastica is the length of the flexible body L minus the length of the constraint, denoted as l.
 
  
 
