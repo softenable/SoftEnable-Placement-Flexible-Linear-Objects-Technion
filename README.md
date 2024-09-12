@@ -176,9 +176,58 @@ are the _costate variables_. The costate $\lambda_x, \lambda_y, \lambda_\phi$ co
 
 
 
-#### 2.2 The Flexible Configuration Space
-This section characterizes the set of Elastica parameters that ensure stability and non-self-intersection of the flexible cable equilibrium shapes in two dimensions.
+#### 2.2 Elastic object against planar surface shape computation 
 
+To calculate the shape of the elastic object under the table constraint $C(S)$ We used optimal control to minimize the elastic energy under pure state con constraint $C(S)\leq0$. 
+The problem formulation is represented as follows:  
+
+$$Minimize_u \ \frac{1}{2}EI\int_0^L u^2(s)ds$$
+
+$$ S.T. \dot S = (\cos\phi(s) \\ \sin\phi(s) \\ u(s)) ,\\ S(0)=(x(0),y(0),ϕ(0)),\\ C(S)=-(y(s)-H_{table})\leq0 $$
+
+Where $h_{table}$ is the height of the table, and is the physical length of the one-dimensional elastic object. 
+Based on [4] when the constraint is active $C(S)=0$ we get an algebraic equation 
+
+$$ N(s)=(C(s_{gal}) \\ \frac{dC(s_{gal}}{ds} = (0 \\ 0) \rightarrow (y(s_{gal}) \\ \\ \sin\phi(s_{gal}))=(h_{table} \\ \\ 0) \rightarrow y(s_{gal}) = h_{table} \\ ; \\ \phi(s_{gal})=0,\pi \\ ; \\ x(s_{gal})=x(s_{gal}=0)+s_{gal}-s_1 $$ (3)
+
+where $s_{gal} \in [s_1, s_2]$ is the physical length of the object that satisfies the constraint $C(s)=0$. For one-hand manipulation $s_{gal} \in [s_1, L]$. 
+The Hamilton function is defined by 
+
+$$ H = ____$$
+
+Where $\lambda \in \mathbb{R}^3$ is costate vector that presents the internal forces and moment along the object, and 
+
+ is Lagrange multiplayer which is related to the constraint function. From the optimality condition 
+
+ 
+ We get the famous Euler-Bernoli bending-moment law 
+
+In Eq (4), the Hamiltonian contains the upper part without the constraint and the lower part is the augmented Hamiltonian that includes the constraint. The difficulty in solving the adjoint equation of the augmented Hamiltonian is the calculation of μ(s). Therefore, we will use the solution we obtained (in the second paper) for the case that does not include the constraint, and we will denote the solution as 
+
+ 
+. From Eq (3), it can be understood that in the part where the constraint is active, the shape of the flexible body is a   
+
+
+
+straight line that aligns with the table/tray. Therefore, we calculate the shape of the flexible body in the part where the constraint is active as a straight line using Eq (3). 
+
+Furthermore, from Eq (3), it can be understood that the curvature is identically equal to zero when the constraint is active. Additionally, the optimality condition 
+
+holds both when the constraint is active and when the constraint is not active; therefore, the Euler-Bernoulli bending moment law holds for all s ∈ [0, L]. We will utilize this property in addition to the physical understanding that the moment 
+
+ along the flexible body must remain continuous as long as no external point moment is applied. Therefore, when the stiffness 
+
+ 
+is continuous, it can be understood that the entry and exit conditions from the constraint are zero curvature at the edges of 
+
+. Also, we know that the curvature of the Elastica is equal to zero when 
+
+
+ 
+. Thus, the shape calculation divides into a straight line when the constraint is active, and Elastica that begins at 
+ when the constraint is not active, where the length of the Elastica is the length of the flexible body L minus the length of the constraint, denoted as 
+
+ 
 
 ------------
 <a name="4.0"></a>
@@ -188,6 +237,36 @@ This section characterizes the set of Elastica parameters that ensure stability 
 </div>-->
 
 ### 4. Testing and Review
+
+
+<!--video of simulation-->
+
+<p align="center">
+<b><i>The displacement process</i></b>
+</p>
+
+
+<p align="center">
+<video src="https://github.com/user-attachments/assets/bf3fd472-4bab-492f-893b-39e2a46ccf40
+" alt="" width="33%">
+</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ------------
