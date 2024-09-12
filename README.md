@@ -200,7 +200,43 @@ From the optimality condition $\frac{\partial H}{\partial u^*}=0$ We get the fam
 In Eq (4), the Hamiltonian contains the upper part without the constraint and the lower part is the augmented Hamiltonian that includes the constraint. The difficulty in solving the adjoint equation of the augmented Hamiltonian is the calculation of μ(s). Therefore, we will use the solution we obtained (in the second paper) for the case that does not include the constraint, and we will denote the solution as 
 $S(s)=(x(s),y(s),ϕ(s))=\psi (k,s_0,L_{gal})$. From Eq (3), it can be understood that in the part where the constraint is active, the shape of the flexible body is a straight line that aligns with the table/tray. Therefore, we calculate the shape of the flexible body in the part where the constraint is active as a straight line using Eq (3). Furthermore, from Eq (3), it can be understood that the curvature is identically equal to zero when the constraint is active. Additionally, the optimality condition $\frac{\partial H}{\partial u^*}=0$ holds both when the constraint is active and when the constraint is not active; therefore, the Euler-Bernoulli bending moment law holds for all $s \in [0, L]$. We will utilize this property in addition to the physical understanding that the moment $\lambda_\phi(s)$ along the flexible body must remain continuous as long as no external point moment is applied. Therefore, when the stiffness $EI$ is continuous, it can be understood that the entry and exit conditions from the constraint are zero curvature at the edges of $s_{gal}$. Also, we know that the curvature of the Elastica is equal to zero when $s+s_0 = L_{gal}/4 or 3L_{gal}/4$. Thus, the shape calculation divides into a straight line when the constraint is active, and Elastica that begins at $s_0 = L_{gal}/4 or 3L_{gal}/4$ when the constraint is not active, where the length of the Elastica is the length of the flexible body L minus the length of the constraint, denoted as l.
 
- 
+<p align="center">
+<img src="Readme_images/fig2.png" alt="" width="33%">
+<br>
+<sup><b>Fig. 5&nbsp;&nbsp; Geometrical description of the elastic object shape against horizontal plan.
+</b></sup>
+</p>
+
+In Figure 5, two possible elastic shapes between the constraint are shown. Each shape may have a different length, such that the sum of the curve lengths plus the constraint equals the physical length of the flexible body, L. Additionally, in manipulation with two arms, there must be a balance of forces in the tangential direction to the surface to prevent the straight part from slipping. Each elastic shape must be stable separately. There's also a friction cone constraint, which will be explained in the next section. 
+
+#### 2.3
+This section discusses two possible shapes for the flexible body when held by a gripper at one side and touching a surface at the distal tip. Each of the two shapes is represented by a different configuration space, assuming the position of the endpoint touching the ground is given.
+
+##### 2.3.1 Option 1 – Point contact at the distal tip 
+In this case, only the distal tip from the gripper touches the surface. This shape is characterized by zero curvature at the point of contact with the surface, as the surface does not apply moment on the flexible body. 
+Since the curvature at the tip is zero, we have $s_0 = L_{gal}/4 or 3L_{gal}/4$, where the shape calculation begins from the point of contact with the ground, and the gripper's position and orientation are determined by the three parameters $(k, \phi(0), L_{gal})$.
+
+<p align="center">
+<img src="Readme_images/fig3.png" alt="" width="33%">
+<br>
+<sup><b>Fig. 6&nbsp;&nbsp; Geometric description of the elastica shape held on one side and supported by a surface on the other side, with only the base-frame touching the surface.
+</b></sup>
+</p>
+
+In Figure 3, we see that $s0=3L_{gal}/4$, when it happens the shape rotates symmetrically around the y-axis around the contact point. 
+
+##### 2.3.2 Option 2 – Segment contact of the body
+In this case, we also begin calculating the flexible object shape from the endpoint touching the surface, but the constraint $C(S)$ is active. The first part is a straight line of length l,
+the length of the constraint, followed by an elastica shape of length $L_{new}=L−l$. In this case, $s_0=L_{gal}/4 or 3L_{gal}/4
+, and $\phi(0)=0$. Therefore, the configuration space defining this shape is determined by the parameters $(k,l,L_{gal})$. 
+
+The next figure will present Option 2 of the flexible body shape against a surface when held by a single gripper. 
+
+
+
+
+
+
 
 ------------
 <a name="4.0"></a>
