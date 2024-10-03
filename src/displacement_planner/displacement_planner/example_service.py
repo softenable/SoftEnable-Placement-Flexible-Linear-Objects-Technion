@@ -11,7 +11,7 @@ from scipy.spatial.transform import Rotation as R
 
 class ExampleService(Node):  # type: ignore
     def __init__(self) -> None:
-        super().__init__("latent_space_planner")
+        super().__init__("example_service")
         self.service = self.create_service(GetObjectPlacementTrajectory, "plan_trajectory", self.plan_trajectory)
 
         # It is good practice to use ROS parameters to store variables that will not change during runtime but may change between different runs of the demonstration.

@@ -1,4 +1,4 @@
-/latent_space_planner:
+/example_service:
   ros__parameters:
     friction_coefficients:
     - 0.3
