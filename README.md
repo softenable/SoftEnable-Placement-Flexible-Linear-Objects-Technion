@@ -110,6 +110,9 @@ The planner, “dispalcement.py” file, consists of three parts, the division w
 
 There is an example of a service and a client that can be updated for this component. The services uses ROS parameters which are useful for setting build time variables. These are typically loaded from a config file for ease of use (./configs/params.yaml). When developing a service for another partner to use it is good practice to create an example client to test the functionality.
 
+A submodule has been added for the interfaces. Use the command below to update:
+```git submodule update --init --recursive```
+
 The easiest way to run the ros service is through docker:
 1. Install [docker](https://docs.docker.com/engine/install/ubuntu/).
 2. Build the docker image using the build script:
