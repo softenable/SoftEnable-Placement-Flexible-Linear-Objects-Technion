@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'Displacement_planner'
+package_name = 'displacement_planner'
 
 setup(
     name=package_name,
@@ -20,6 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "service = py_pubsub.example_service:main",
+            "client = py_pubsub.example_client:main",
         ],
     },
 )
