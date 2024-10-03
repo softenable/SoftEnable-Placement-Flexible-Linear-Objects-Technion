@@ -20,8 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "service = py_pubsub.example_service:main",
-            "client = py_pubsub.example_client:main",
+            "service = displacement_planner.example_service:main",
+            "client = displacement_planner.example_client:main",
         ],
     },
 )
