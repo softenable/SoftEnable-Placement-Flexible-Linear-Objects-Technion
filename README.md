@@ -104,7 +104,7 @@ The pipeline of the script performs the following:
   9. Returns the total trajectory.
   <br /> **Output**: total trajectory, robot joint positions.
 
-The planner, “dispalcement.py” file, consists of three parts, the division was defined according to the three sub-problems: sub-problem one is to take the object to the “stabbing point” which is the first point the object touches the tray. The input is the object's current position, and the target is the “stabbing point”. 
+The planner, “displacement.py” file, consists of three parts, the division was defined according to the three sub-problems: sub-problem one is to take the object to the “stabbing point” which is the first point the object touches the tray. The input is the object's current position, and the target is the “stabbing point”. 
 
 <p align="center">
 <img src="Readme_images/stabbing_point_real.png" alt="" width="33%">
