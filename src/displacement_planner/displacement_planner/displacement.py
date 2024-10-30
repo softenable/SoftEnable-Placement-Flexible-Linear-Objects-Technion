@@ -1,8 +1,8 @@
 # This script is the whole process of displacement
 
 import numpy as np
-import utils as hf
-import node_class
+import displacement_planner.utils as hf
+import displacement_planner.node_class as node_class
 
 
 def displacement(start_1, target_1, target_2, target_3, L, mu_fric, direction, h_table, alpha, urdf, q_start):

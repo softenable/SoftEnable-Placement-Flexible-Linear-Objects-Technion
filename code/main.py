@@ -8,7 +8,8 @@ import sys
 import pinocchio as pin
 
 
-urdf = r"C:\Users\ronil\2D_ElasticRod_Steering_python\iiwa14_with_ft_and_dlr_gripper.urdf"# path of the URDF
+urdf = "/home/ros/repos/SoftEnable-Displacement-Flexible-Linear-Objects-Technion/iri_robot.urdf"# path of the URDF
+# urdf = "/home/ros/repos/SoftEnable-Displacement-Flexible-Linear-Objects-Technion/robots_urdf/ur5e/ur5e.urdf"# path of the URDF
 urdf_filename = (
         urdf
         if len(sys.argv) < 2
@@ -23,7 +24,7 @@ L = 0.3
 mu_1 = 0.5 # the friction coefficient between the phantom and the tray
 mu_2 = 0.1 # the friction coefficient between the tray and the table
 mu_fric = np.min([mu_1, mu_2])
-h_table = 0.0
+h_table = -0.5
 alpha = 0.6
 if direction == "right":
     C = 1/4
@@ -32,14 +33,34 @@ elif direction == "left":
     C = 3/4
     phi_0_T2 = np.pi
 
+# start_pose = [0.637, 0.085, 0.728] # finger in map
+# start_pose = [0.258, -0.637, 0.136] 
+
+start_pose = [0.138, -0.634, -0.005]  # UR5 base pose
+stab_pose = [0.191, -0.634, -0.061]
+
 # define start and target for sub-problem 1
 X0_S1 = 0.4
 Y0_S1 = 0.2
 Z0_S1 = h_table + 0.3*L
+
+X0_S1 = start_pose[0]
+Y0_S1 = start_pose[1]
+Z0_S1 = start_pose[2]
+
+# X0_S1 = 0.0
+# Y0_S1 = 0.0
+# Z0_S1 = 0.0
+
 theta_S1 = np.pi/2
 X0_T1 = 0.5
 Y0_T1 = 0.2
 Z0_T1 = h_table
+
+X0_T1 = stab_pose[0]
+Y0_T1 = stab_pose[1]
+Z0_T1 = stab_pose[2]
+
 theta_T1 = 0
 L_gal_S = 2*L
 target_1 = node_class.Target(X0_T1, Y0_T1, Z0_T1, np.pi/2, theta_T1, 1, C*L_gal_S, L_gal_S, 0, L, direction)
@@ -70,28 +91,28 @@ if path:
     t = np.linspace(0, 1, num_t)
     s = np.linspace(0, 1, num_t)
 
-    x1, y1, z1, phi_l_1, theta_1, l1, q1 = hf.get_smooth_path_displacement(path_1, skip, t, L, direction, urdf, path_1[0].jointsPose)
-    x2, y2, z2, phi_l_2, theta_2, l2, q2 = hf.get_smooth_path_displacement(path_2, skip, t, L, direction, urdf, path_2[0].jointsPose)
-    x3, y3, z3, phi_l_3, theta_3, l3, q3 = hf.get_smooth_path_displacement(path_3, skip, t, L, direction, urdf, path_3[0].jointsPose)
+    # x1, y1, z1, phi_l_1, theta_1, l1, q1 = hf.get_smooth_path_displacement(path_1, skip, t, L, direction, urdf, path_1[0].jointsPose)
+    # x2, y2, z2, phi_l_2, theta_2, l2, q2 = hf.get_smooth_path_displacement(path_2, skip, t, L, direction, urdf, path_2[0].jointsPose)
+    # x3, y3, z3, phi_l_3, theta_3, l3, q3 = hf.get_smooth_path_displacement(path_3, skip, t, L, direction, urdf, path_3[0].jointsPose)
 
     t_end = time.time()
     ExecutionTime1_2_3 = t_end - t_start
     print("Execution Time =", ExecutionTime1_2_3)
 
-    P1, R1 = hf.get_gripper_path(x1[:, -1], y1[:, -1], z1[:, -1], phi_l_1, theta_1)
-    P2, R2 = hf.get_gripper_path(x2[:, -1], y2[:, -1], z2[:, -1], phi_l_2, theta_2)
-    P3, R3 = hf.get_gripper_path(x3[:, -1], y3[:, -1], z3[:, -1], phi_l_3, theta_3)
+    # P1, R1 = hf.get_gripper_path(x1[:, -1], y1[:, -1], z1[:, -1], phi_l_1, theta_1)
+    # P2, R2 = hf.get_gripper_path(x2[:, -1], y2[:, -1], z2[:, -1], phi_l_2, theta_2)
+    # P3, R3 = hf.get_gripper_path(x3[:, -1], y3[:, -1], z3[:, -1], phi_l_3, theta_3)
 
     # make x,y z to np.array
-    x = np.array(x1.tolist() + x2.tolist() + x3.tolist())
-    y = np.array(y1.tolist() + y2.tolist() + y3.tolist())
-    z = np.array(z1.tolist() + z2.tolist() + z3.tolist())
+    # x = np.array(x1.tolist() + x2.tolist() + x3.tolist())
+    # y = np.array(y1.tolist() + y2.tolist() + y3.tolist())
+    # z = np.array(z1.tolist() + z2.tolist() + z3.tolist())
 
     # check by graphs
     path = path_1 + path_2 + path_3
-    gripper_P = np.array(P1.tolist() + P2.tolist() + P3.tolist())
-    gripper_R = R1 + R2 + R3
-    robot_joint_pose = q1 + q2 + q3
+    # gripper_P = np.array(P1.tolist() + P2.tolist() + P3.tolist())
+    # gripper_R = R1 + R2 + R3
+    # robot_joint_pose = q1 + q2 + q3
     if direction == "right":
         a = 1
     elif direction == "left":

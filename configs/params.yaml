@@ -4,6 +4,6 @@
     - 0.3
     - 0.2
     table_height: -0.1
-    urdf_file_path: some/path/in/the/shared/volume.urdf
+    urdf_file_path: some/path/in/the/shared/volume.urdFFF
     use_sim_time: false
 

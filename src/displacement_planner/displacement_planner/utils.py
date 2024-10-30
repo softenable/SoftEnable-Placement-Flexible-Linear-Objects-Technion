@@ -1,5 +1,5 @@
 from scipy import special
-import node_class
+import displacement_planner.node_class as node_class
 import pinocchio as pin
 import numpy as np
 import sys
@@ -298,6 +298,7 @@ def check_node_disp(node, Bound, mode, q_start):
         print("somthing straing!")
         check = 0
     if check:
+        print(IKFromURDF(Bound.urdf, node, q_start))
         check, q = IKFromURDF(Bound.urdf, node, q_start)
         node.jointsPose = q
     return check

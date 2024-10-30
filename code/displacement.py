@@ -59,6 +59,7 @@ def A_star_displacement(start, target, Bound, mode, q_start):
                 flag = 1
                 break
             Open, Close = hf.get_star(x_best, Open, Close, Bound, target, mode, q_start) # define this function
+          
     else:
         print("there is no valid path for sub-problem", mode)
     if flag:

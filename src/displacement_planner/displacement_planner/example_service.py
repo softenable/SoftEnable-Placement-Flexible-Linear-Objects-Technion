@@ -1,5 +1,6 @@
 # © Copyright 2024, Ocado Group PLC. All the rights reserved.
 import rclpy
+import numpy as np
 from rclpy.node import Node
 from displacement_flexible_linear_objects_msgs.srv import GetObjectPlacementTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -7,6 +8,9 @@ from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 from rclpy.time import Duration
 from typing import Any
 from scipy.spatial.transform import Rotation as R
+from displacement_planner.main import mainCalculation
+from sensor_msgs.msg import JointState
+from rclpy.callback_groups import ReentrantCallbackGroup
 
 
 class ExampleService(Node):  # type: ignore
@@ -22,7 +26,7 @@ class ExampleService(Node):  # type: ignore
             parameters=[
                 (
                     "urdf_file_path",
-                    "some/path/in/the/shared/volume.urdf",
+                    "/home/ros/repos/SoftEnable-Displacement-Flexible-Linear-Objects-Technion/iri_robot.urdf",
                     ParameterDescriptor(
                         type=ParameterType.PARAMETER_STRING, description="The path to urdf file of the robot."
                     ),
@@ -36,13 +40,17 @@ class ExampleService(Node):  # type: ignore
                 ),
                 (
                     "table_height",
-                    -0.1,
+                    0.4,
                     ParameterDescriptor(
                         type=ParameterType.PARAMETER_DOUBLE,
                         description="The height of the robot relative to the world frame.",
                     ),
                 ),
             ],
+        )
+        
+        self.js_sub = self.create_subscription(
+            JointState, "/joint_states", self.js_callback, 0, callback_group=ReentrantCallbackGroup()
         )
 
         self.urdf_path = self.get_parameter("urdf_file_path").get_parameter_value().string_value
@@ -52,6 +60,9 @@ class ExampleService(Node):  # type: ignore
         self.get_logger().info("URDF file path: %s" % self.urdf_path)
         self.get_logger().info("Friction coefficients: %s" % self.friction_coefficients)
         self.get_logger().info("Table height: %s" % self.table_height)
+
+    def js_callback(self, msg): 
+        self.current_q = {jname: q for jname, q in zip(msg.name, msg.position)}
 
     def plan_trajectory(self, request: Any, response: Any) -> Any:
         self.get_logger().info("Service called")
@@ -64,16 +75,31 @@ class ExampleService(Node):  # type: ignore
         # Trigger the planner
         self.get_logger().info("Starting planner")
         
-        #####################################################################
-        # TODO: use the request data for calculation and return the trajectory response
+        print(self.current_q)
+        
+        q_start = np.array([
+            self.current_q["shoulder_pan_joint"],
+            self.current_q["shoulder_lift_joint"],
+            self.current_q["elbow_joint"],
+            self.current_q["wrist_1_joint"],
+            self.current_q["wrist_2_joint"],
+            self.current_q["wrist_3_joint"],
+        ])
+        
+        mainCalculation(
+            self.urdf_path, 
+            q_start,
+            mu_fric = min(self.friction_coefficients), 
+            h_table = self.table_height,
+            direction = request.roll_left_to_right.data,
+            start_pose = [
+                request.object_start_pose.position.x,
+                request.object_start_pose.position.y,
+                request.object_start_pose.position.z
+            ]
+        )
         
         
-        
-        #######################################################################
-        
-        
-        self.get_logger().warn("Implement your own calculations here!")
-
         # Example using 3rd party library scipy to convert the pose to a rotation matrix
         r = R.from_quat([request.object_start_pose.orientation.x, request.object_start_pose.orientation.y, request.object_start_pose.orientation.z, request.object_start_pose.orientation.w])
         rotation_matrix = r.as_matrix()

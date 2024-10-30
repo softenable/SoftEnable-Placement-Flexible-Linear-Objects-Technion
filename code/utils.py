@@ -298,7 +298,7 @@ def check_node_disp(node, Bound, mode, q_start):
         print("somthing straing!")
         check = 0
     if check:
-        check, q = IKFromURDF(Bound.urdf, node, q_start)
+        check, q = IKFromURDF(Bound.urdf, node, q_start)        
         node.jointsPose = q
     return check
 
