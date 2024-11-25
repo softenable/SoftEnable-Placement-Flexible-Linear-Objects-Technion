@@ -1,10 +1,10 @@
-# Displacement Flexible Linear Objects by Technion
-In this repository, you will find Python program and documentation of the displacement process.
+# placement Flexible Linear Objects by Technion
+In this repository, you will find Python program and documentation of the placement process.
 
 <!--video of simulation-->
 
 <p align="center">
-<b><i>The displacement process</i></b>
+<b><i>The placement process</i></b>
 </p>
 
 
@@ -59,7 +59,7 @@ In this repository, you will find Python program and documentation of the displa
 <a name="1.0"></a>
 ### 1. Introduction
 
-The proposed repository focuses on the three subproblems of the displacement process.  For the development of this Python library, we used the **elastica** as our model, which is explained in detail below.  
+The proposed repository focuses on the three subproblems of the placement process.  For the development of this Python library, we used the **elastica** as our model, which is explained in detail below.  
 
 ##### Objective
 
@@ -67,7 +67,7 @@ In order to place the DO effectively, precise manner and without damage or disto
 As part of our work, we proposed a novel approach to shape control of deformable elongated linear objects which could have potential applications in the handling of fish.
 This is a challenging problem since it requires an online analysis of the current setting of the environment and the current capabilities of the agent. In addition, it requires an integration of high-level task planning and low-level motion planning. 
 
-Within the context of this, the displacement cycle can be divided into the following tasks:
+Within the context of this, the placement cycle can be divided into the following tasks:
 
 * Bring the DO from the transportation process target to the stabbing point with the tray.
 * Getting the DO ready for rolling so that its edge does not slip from the tray and the tray does not slip on the surface.
@@ -214,7 +214,7 @@ $S(s)=(x(s),y(s),\phi(s))=\psi(k,s_0,L_{gal})$. From Eq (3), it can be understoo
 
 In Figure 6, two possible elastic shapes between the constraint are shown. Each shape may have a different length, such that the sum of the curve lengths plus the constraint equals the physical length of the flexible body, L. Additionally, in manipulation with two arms, there must be a balance of forces in the tangential direction to the surface to prevent the straight part from slipping. Each elastic shape must be stable separately. There's also a friction cone constraint, which will be explained in the next section. 
 
-#### 3.3 Displacement Method
+#### 3.3 Placement Method
 This section discusses two possible shapes for the flexible body when held by a gripper at one side and touching a surface at the distal tip. Each of the two shapes is represented by a different configuration space, assuming the position of the endpoint touching the ground is given.
 
 ##### 3.3.1 Option 1 – Point contact at the distal tip 
@@ -261,8 +261,8 @@ The next figure will graphically illustrate the non-slip constraint.
 </b></sup>
 </p>
 
-#### 3.4 Displacement Method
-Now that we know how to handle the interface between the elastica curve and a planar surface, we can solve the displacement problem by breaking it down into three separate sub-problems navigation, each with different configuration spaces. 
+#### 3.4 Placement Method
+Now that we know how to handle the interface between the elastica curve and a planar surface, we can solve the placement problem by breaking it down into three separate sub-problems navigation, each with different configuration spaces. 
 
 * Bring the DO from the transportation process target to the stabbing point with the tray.  
 
@@ -283,7 +283,7 @@ The next figure will illustrate the problem of placing the flexible object using
 <p align="center">
 <img src="Readme_images/fig6.png" alt="" width="33%">
 <br>
-<sup><b>Fig. 9&nbsp;&nbsp; Description of the solution to the problem of displacement of the flexible object through three sub-problems (Primitives).
+<sup><b>Fig. 9&nbsp;&nbsp; Description of the solution to the problem of placement of the flexible object through three sub-problems (Primitives).
 </b></sup>
 </p>
 
@@ -302,7 +302,7 @@ The next figure will illustrate the problem of placing the flexible object using
 <!--video of simulation-->
 
 <p align="center">
-<b><i>The displacement process</i></b>
+<b><i>The placement process</i></b>
 </p>
 <p align="center">
 <video src="https://github.com/user-attachments/assets/bf3fd472-4bab-492f-893b-39e2a46ccf40
