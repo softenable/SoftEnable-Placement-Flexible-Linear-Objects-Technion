@@ -1,4 +1,4 @@
-# placement Flexible Linear Objects by Technion
+# Placement Flexible Linear Objects by Technion
 In this repository, you will find Python program and documentation of the placement process.
 
 <!--video of simulation-->
