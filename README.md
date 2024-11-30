@@ -214,7 +214,7 @@ $S(s)=(x(s),y(s),\phi(s))=\psi(k,s_0,L_{gal})$. From Eq (3), it can be understoo
 
 In Figure 6, two possible elastic shapes between the constraint are shown. Each shape may have a different length, such that the sum of the curve lengths plus the constraint equals the physical length of the flexible body, L. Additionally, in manipulation with two arms, there must be a balance of forces in the tangential direction to the surface to prevent the straight part from slipping. Each elastic shape must be stable separately. There's also a friction cone constraint, which will be explained in the next section. 
 
-#### 3.3 Placement Method
+#### 3.3 One-Hand Manipulation
 This section discusses two possible shapes for the flexible body when held by a gripper at one side and touching a surface at the distal tip. Each of the two shapes is represented by a different configuration space, assuming the position of the endpoint touching the ground is given.
 
 ##### 3.3.1 Option 1 – Point contact at the distal tip 
