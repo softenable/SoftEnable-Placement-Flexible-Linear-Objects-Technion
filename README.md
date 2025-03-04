@@ -106,6 +106,25 @@ The pipeline of the script performs the following:
 
 The planner, “displacement.py” file, consists of three parts, the division was defined according to the three sub-problems: sub-problem one is to take the object to the “stabbing point” which is the first point the object touches the tray. The input is the object's current position, and the target is the “stabbing point”. 
 
+##### 2.2.1 ROS Docker implementation
+
+There is an example of a service and a client that can be updated for this component. The services uses ROS parameters which are useful for setting build time variables. These are typically loaded from a config file for ease of use (./configs/params.yaml). When developing a service for another partner to use it is good practice to create an example client to test the functionality.
+
+A submodule has been added for the interfaces. Use the command below to update:
+```git submodule update --init --recursive```
+
+The easiest way to run the ros service is through docker:
+1. Install [docker](https://docs.docker.com/engine/install/ubuntu/).
+2. Build the docker image using the build script:
+```./build.sh```
+3. Run the example service with the params from the config file:
+```./run.sh ros2 run displacement_planner service --ros-args --params-file /ws/configs/params.yaml```
+4. Run the example client:
+```./run.sh ros2 run displacement_planner client```
+
+Using docker will make the installation of requirements easier and remove conflicts however these packages can be used locally too. By installing ROS-humble and the packages in the requirements.txt.
+
+
 <p align="center">
 <img src="Readme_images/stabbing_point_real.png" alt="" width="33%">
 <img src="Readme_images/stabbing_point_sim.png" alt="" width="33%">

@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>Displacement_planner</name>
+  <name>displacement_planner</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="itaygrinberg@campus.technion.ac.il">itay</maintainer>
   <license>Apache-2.0</license>
-
+<!-- 
   <exec_depend>cycler</exec_depend>
   <exec_depend>fonttools</exec_depend>
   <exec_depend>kiwisolver</exec_depend>
@@ -23,8 +23,18 @@
   <exec_depend>tenacity</exec_depend>
   <exec_depend>tomli</exec_depend>
   <exec_depend>tornado</exec_depend>
-  <exec_depend>tzdata</exec_depend>
-  <exec_depend>unicodedata2</exec_depend>
+  <exec_depend>tzdata</exec_depend> -->
+  <!-- <exec_depend>unicodedata2</exec_depend> -->
+
+  <build_depend>displacement_flexible_linear_objects_msgs</build_depend>
+  <exec_depend>displacement_flexible_linear_objects_msgs</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
     
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

@@ -1,0 +1,7 @@
+nano
+gdb
+udev
+curl
+git 
+ssh
+he-iiwa-description=0.25.0

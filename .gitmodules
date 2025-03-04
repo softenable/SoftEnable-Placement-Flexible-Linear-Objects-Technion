@@ -1,0 +1,6 @@
+[submodule "src/ros2_common_interfaces"]
+	path = src/ros2_common_interfaces
+	url = git@github.com:softenable/ros2_common_interfaces.git
+[submodule "src/softenable-ros2-common-interfaces"]
+	path = src/softenable-ros2-common-interfaces
+	url = git@gitlab.ocado.tech:external-collaborations/he-robotics/softenable/integrated-demo/common/softenable-ros2-common-interfaces.git

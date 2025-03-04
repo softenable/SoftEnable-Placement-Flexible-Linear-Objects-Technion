@@ -1,9 +1,45 @@
 from scipy import special
-import node_class
+from displacement_planner.displacement import node_class
 import pinocchio as pin
 import numpy as np
 import sys
 from numpy.linalg import norm, solve
+
+tip_link = "dlr_gripper_center"
+# self.model = pin.buildModelFromUrdf(self.urdf_path)
+
+from robot_tools.devices.robots import IIWA, IIWAParameters
+from robot_tools.kinematics.basic_serial_manipulator_kinematics import (
+    BasicSerialManipulatorKinematics,
+)
+
+from robot_tools.kinematics.kinematics_solver_parameters import (
+    KinematicsSolverParameters,
+)
+from robot_tools.kinematics.basic_serial_manipulator_kinematics import (
+    BasicSerialManipulatorKinematics,
+)
+
+
+urdf_file_path = "/usr/share/iiwa-description/urdf/iiwa14_with_ft_and_dlr_gripper.urdf"
+tip_link = "dlr_gripper_center"
+
+# robot_parameters = IIWAParameters(urdf_path=urdf_path, tip_link=tip_link, config_path="/ws/src/iiwa_default.yaml", base_frame="world", reference_frame = pin.ReferenceFrame.LOCAL)
+# robot = IIWA(parameters=robot_parameters)
+
+
+# model: pin.Model = pin.buildModelFromUrdf(urdf_file_path)
+kinematic_parameters: KinematicsSolverParameters = (
+    KinematicsSolverParameters(tip_link=tip_link)
+)
+kinematic_parameters.reference_frame = pin.ReferenceFrame.LOCAL_WORLD_ALIGNED
+kinematic_parameters.base_frame = "world"
+
+kin = BasicSerialManipulatorKinematics(
+    urdf_file_path, kinematic_parameters
+)
+kin.obtain_reduced_model(tip_link=tip_link)
+
 
 
 def get_shape(X0, Y0, PHI0, mu, L_gal, s0, s):
@@ -128,7 +164,7 @@ def where_to_put_neighbor(neighbor, open_list):
     return index_a
 
 
-def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
+def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start, model):
     """
     What the function do
     ____________________
@@ -147,7 +183,7 @@ def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
     -------
     Sorted open and close lists
     """
-    if check_node_disp(neighbor, bound, mode, q_start):
+    if check_node_disp(neighbor, bound, mode, q_start, model):
         if not check_in_list(neighbor, close_list, bound):
             index = check_in_list(neighbor, open_list, bound)
             if index:
@@ -161,7 +197,7 @@ def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
     return open_list, close_list
 
 
-def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
+def get_star(x_best, open_list, close_list, bound, target, mode, q_start, model):
     """
     What the function do
     ____________________
@@ -253,11 +289,11 @@ def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
                              x_best.l - bound.dl, x_best, bound.L, bound.alpha, bound.displacment_diraction)
         neighbors = [n1, n2, n3, n4, n5, n6]
     for n in neighbors:
-        open_list, close_list = get_neighbor(n, open_list, close_list, bound, mode, q_start)
+        open_list, close_list = get_neighbor(n, open_list, close_list, bound, mode, q_start, model)
     return open_list, close_list
 
 
-def check_node_disp(node, Bound, mode, q_start):
+def check_node_disp(node, Bound, mode, q_start, model):
     """
      What the function do
     ____________________
@@ -298,12 +334,12 @@ def check_node_disp(node, Bound, mode, q_start):
         print("somthing straing!")
         check = 0
     if check:
-        check, q = IKFromURDF(Bound.urdf, node, q_start)
+        check, q = IKFromURDF(Bound.urdf, node, q_start, model)
         node.jointsPose = q
     return check
 
 
-def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
+def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start, model):
     """
     What the function do
     ____________________
@@ -370,7 +406,7 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
             ls.append(line[3])
             node = node_class.JointNode(XL=xs[-1][-1], YL=ys[-1][-1], ZL=zs[-1][-1], phi_L=phi_l_s[-1],
                                         theta=line[5], father=Node[-1])
-            check, q_temp = IKFromURDF(urdf, node, q_start)
+            check, q_temp = IKFromURDF(urdf, node, q_start, model)
             q.append(q_temp.tolist())
             node.jointsPose = q_temp
             Node.append(node)
@@ -422,7 +458,134 @@ def get_gripper_path(x, y, z, phi_L, theta):
     return P, R
 
 
-def IKFromURDF(urdf:str, node, q_start):
+# def IKFromURDF2(urdf:str, node, q_start, model):
+#     """
+#     What the function do
+#     ____________________
+#     compute the IK based on the urdf
+
+#     Parameters
+#     ----------
+#     urdf
+#     node
+
+#     Returns
+#     -------
+#     if valid: Ture and the joint position
+#     if not valid: false
+#     """
+#     # You should change here to set up your own URDF file or just pass it as an argument of this example.
+#     # print("HOHO", urdf)
+#     # urdf_filename = (
+#     #     urdf
+#     #     if len(sys.argv) < 2
+#     #     else sys.argv[1]
+#     # )
+
+#     # # Load the urdf model
+#     # model = pin.buildModelFromUrdf(urdf)
+#     # print("model name: " + model.name)
+
+#     # data = pin.RobotWrapper(model).data
+#     # data = model.createData()
+#     data = robot.robot.data
+#     print(model)
+#     print(data)
+#     print(q_start)
+
+#     # Create data required by the algorithms
+#     # data = model.createData()
+#     JOINT_ID = model.njoints - 1
+#     # JOINT_ID = 6
+#     # Sample a start configuration
+#     P, R = get_gripper_path(node.XL, node.YL, node.ZL, [node.phi_L], [node.theta])
+#     oMdes = pin.SE3(R[0], np.array(P[0]))
+#     if node.father:
+#         q = node.father.jointsPose
+#     else:
+#         q = q_start # need to get from the robot joint the initial position
+#     # print("q: %s" % q.T)
+#     print("SHDOSAHDOSAHDOSAHDOASHDOASHDOASHDOASHDOASHDOHASODHSAODHA")
+#     robot.set_joint_positions(q)
+#     print(robot.inverse_kinematics(oMdes, q))
+#     exit()
+#     eps = 1e-4
+#     IT_MAX = 1000
+#     DT = 1e-1
+#     damp = 1e-12
+#     i = 0
+
+#     while True:
+#         pin.forwardKinematics(model, data, q)
+#         iMd = data.oMi[JOINT_ID].actInv(oMdes)
+#         err = pin.log(iMd).vector  # in joint frame
+#         if norm(err) < eps:
+#             success = True
+#             break
+#         if i >= IT_MAX:
+#             success = False
+#             break
+#         J = pin.computeJointJacobian(model, data, q, JOINT_ID)  # in joint frame
+#         J = -np.dot(pin.Jlog6(iMd.inverse()), J)
+#         v = -J.T.dot(solve(J.dot(J.T) + damp * np.eye(6), err))
+#         q = pin.integrate(model, q, v * DT)
+#         i += 1
+
+#     if success:
+#         return [True, q]
+
+#     else:
+#         return [False, np.zeros(model.nq)]
+
+
+
+
+def check_node_disp(node, Bound, mode, q_start, model):
+    """
+     What the function do
+    ____________________
+    For each mode the function check if the node is the C space
+
+    Parameters
+    ----------
+    node
+    Bound
+    mode
+
+    Returns
+    -------
+    bool: Ture/False
+    """
+    if mode == 1:
+        check_x = Bound.x_max >= node.X0 >= Bound.x_min
+        check_y = Bound.y_max >= node.Y0 >= Bound.y_min
+        check_z = Bound.z_max >= node.Z0 >= Bound.z_min
+        check_theta = Bound.theta_max >= node.theta >= Bound.theta_min
+        check = check_x and check_y and check_z and check_theta
+    elif mode == 2:
+        check_phi = Bound.max_phi_0 >= node.phi_0 >= Bound.min_phi_0
+        check_mu = Bound.max_mu >= node.mu >= Bound.min_mu
+        check_L_gal = Bound.L_gal_max >= node.L_gal >= 1.86 * (Bound.L - node.l)  # stability criteria
+        if Bound.displacment_diraction == 'right':  # friction cone check
+            check_fric = np.pi / 2 + Bound.gamma >= node.phi_0 + np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
+        elif Bound.displacment_diraction == 'left':
+            check_fric = np.pi / 2 + Bound.gamma >= node.phi_0 - np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
+        check = check_phi and check_mu and check_L_gal and check_fric
+    elif mode == 3:
+        check_mu = Bound.max_mu >= node.mu >= Bound.min_mu
+        check_L_gal = Bound.L_gal_max >= node.L_gal >= 1.86 * (Bound.L - node.l)  # stability criteria
+        check_l = Bound.min_l <= node.l <= Bound.max_l
+        check_fric = np.pi / 2 + Bound.gamma >= np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
+        check = check_mu and check_L_gal and check_l and check_fric
+    else:
+        print("somthing straing!")
+        check = 0
+    if check:
+        check, q = IKFromURDF(Bound.urdf, node, q_start, model)
+        node.jointsPose = q
+    return check
+
+def IKFromURDF(urdf:str, node, q_start, model):
     """
     What the function do
     ____________________
@@ -439,27 +602,44 @@ def IKFromURDF(urdf:str, node, q_start):
     if not valid: false
     """
     # You should change here to set up your own URDF file or just pass it as an argument of this example.
-    urdf_filename = (
-        urdf
-        if len(sys.argv) < 2
-        else sys.argv[1]
-    )
+    # urdf_filename = (
+    #     urdf
+    #     if len(sys.argv) < 2
+    #     else sys.argv[1]
+    # )
 
     # Load the urdf model
-    model = pin.buildModelFromUrdf(urdf_filename)
+    # model = pin.buildModelFromUrdf(urdf)
     # print("model name: " + model.name)
 
     # Create data required by the algorithms
-    data = model.createData()
-    JOINT_ID = model.njoints - 1
+    
+    # data = robot.robot.data
+    # print(model)
+    # print(data)
+    # print(q_start)
+    print("INVERTING")
+    # data = model.createData()
+    # JOINT_ID = model.njoints - 1
     # Sample a start configuration
+     # Desired end-effector pose from get_gripper_path.
     P, R = get_gripper_path(node.XL, node.YL, node.ZL, [node.phi_L], [node.theta])
     oMdes = pin.SE3(R[0], np.array(P[0]))
+
+    # Use node.father.jointsPose if available; otherwise, q_start.
     if node.father:
-        q = node.father.jointsPose
+        q = node.father.jointsPose.copy()
     else:
-        q = q_start # need to get from the robot joint the initial position
-    # print("q: %s" % q.T)
+        q = q_start
+    print("SHDOSAHDOSAHDOSAHDOASHDOASHDOASHDOASHDOASHDOHASODHSAODHA")
+    success, joint_positions_actual = kin.inverse_kinematics(
+            q, oMdes.copy()
+        )
+
+    # robot.set_joint_positions(q)
+    # something = robot.inverse_kinematics(oMdes, q)
+    # exit()
+    return [True, joint_positions_actual]
 
     eps = 1e-4
     IT_MAX = 1000
@@ -469,24 +649,25 @@ def IKFromURDF(urdf:str, node, q_start):
 
     while True:
         pin.forwardKinematics(model, data, q)
-        iMd = data.oMi[JOINT_ID].actInv(oMdes)
-        err = pin.log(iMd).vector  # in joint frame
+        T_current = data.oMi[JOINT_ID]
+
+        # Compute error in world frame.
+        T_error = oMdes * T_current.inverse()
+        err = pin.log(T_error).vector  # error twist (world frame)
+
         if norm(err) < eps:
-            success = True
-            break
+            return [True, q]
         if i >= IT_MAX:
-            success = False
-            break
-        J = pin.computeJointJacobian(model, data, q, JOINT_ID)  # in joint frame
-        J = -np.dot(pin.Jlog6(iMd.inverse()), J)
+            return False
+
+        print(f"Iteration {i}, error norm: {norm(err):.6f}")
+
+        # Get Jacobian in world frame.
+        J = pin.getFrameJacobian(model, data, JOINT_ID, pin.ReferenceFrame.WORLD)
         v = -J.T.dot(solve(J.dot(J.T) + damp * np.eye(6), err))
+        print(f"Iteration {i}, update norm: {norm(v*DT):.6f}")
+
         q = pin.integrate(model, q, v * DT)
         i += 1
-
-    if success:
-        return [True, q]
-
-    else:
-        return False
 
 
