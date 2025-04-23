@@ -203,7 +203,7 @@ The Hamilton function is defined by
 Where $\lambda \in \mathbb{R}^3$ is costate vector that presents the internal forces and moment along the object, and $\mu$ is Lagrange multiplayer related to the constraint function. 
 From the optimality condition $\frac{\partial H}{\partial u^\*}=0$ We get the famous Euler-Bernoli bending-moment law $\lambda_\phi(s)=-EIu(s)=-EI\kappa(s)$.
 In Eq (4), the Hamiltonian contains the upper part without the constraint and the lower part is the augmented Hamiltonian that includes the constraint. The difficulty in solving the adjoint equation of the augmented Hamiltonian is the calculation of $\mu(s)$. Therefore, we will use the solution we obtained (in the second paper) for the case that does not include the constraint, and we will denote the solution as 
-$S(s)=(x(s),y(s),\phi(s))=\psi(k,s_0,L_{gal})$. From Eq (3), it can be understood that in the part where the constraint is active, the shape of the flexible body is a straight line that aligns with the table/tray. Therefore, we calculate the shape of the flexible body in the part where the constraint is active as a straight line using Eq (3). Furthermore, from Eq (3), it can be understood that the curvature is identically equal to zero when the constraint is active. Additionally, the optimality condition $\frac{\partial H}{\partial u^\*}=0$ holds both when the constraint is active and when the constraint is not active; therefore, the Euler-Bernoulli bending moment law holds for all $s \in [0, L]$. We will utilize this property in addition to the physical understanding that the moment $\lambda_\phi(s)$ along the flexible body must remain continuous as long as no external point moment is applied. Therefore, when the stiffness $EI$ is continuous, it can be understood that the entry and exit conditions from the constraint are zero curvature at the edges of $s_{gal}$. Also, we know that the curvature of the Elastica is equal to zero when $s+s_0 = L_{gal}/4 \\ or \\ 3L_{gal}/4$. Thus, the shape calculation divides into a straight line when the constraint is active, and Elastica that begins at $s_0 = L_{gal}/4 \\ or \\ 3L_{gal}/4$ when the constraint is not active, where the length of the Elastica is the length of the flexible body L minus the length of the constraint, denoted as l.
+$S(s)=(x(s),y(s),\phi(s))=\psi(k,s_0,\tilde{L})$. From Eq (3), it can be understood that in the part where the constraint is active, the shape of the flexible body is a straight line that aligns with the table/tray. Therefore, we calculate the shape of the flexible body in the part where the constraint is active as a straight line using Eq (3). Furthermore, Eq (3) shows that the curvature is identically equal to zero when the constraint is active. Additionally, the optimality condition $\frac{\partial H}{\partial u^\*}=0$ holds both when the constraint is active and when the constraint is not active; therefore, the Euler-Bernoulli bending moment law holds for all $s \in [0, L]$. We will utilize this property in addition to the physical understanding that the moment $\lambda_\phi(s)$ along the flexible body must remain continuous as long as no external point moment is applied. Therefore, when the stiffness $EI$ is continuous, it can be understood that the entry and exit conditions from the constraint are zero curvature at the edges of $s_{gal}$. Also, we know that the curvature of the Elastica is equal to zero when $s+s_0 = \tilde{L}/4 \\ or \\ 3\tilde{L}/4$. Thus, the shape calculation divides into a straight line when the constraint is active, and Elastica that begins at $s_0 = \tilde{L}/4 \\ or \\ 3\tilde{L}/4$ when the constraint is not active, where the length of the Elastica is the length of the flexible body L minus the length of the constraint, denoted as l.
 
 <p align="center">
 <img src="Readme_images/fig2.png" alt="" width="33%">
@@ -219,7 +219,7 @@ This section discusses two possible shapes for the flexible body when held by a 
 
 ##### 3.3.1 Option 1 – Point contact at the distal tip 
 In this case, only the distal tip from the gripper touches the surface. This shape is characterized by zero curvature at the point of contact with the surface, as the surface does not apply moment on the flexible body. 
-Since the curvature at the tip is zero, we have $s_0 = L_{gal}/4 \\ or \\ 3L_{gal}/4$, where the shape calculation begins from the point of contact with the ground, and the gripper's position and orientation are determined by the three parameters $(k, \phi(0), L_{gal})$.
+Since the curvature at the tip is zero, we have $s_0 = \tilde{L}/4 \\ or \\ 3\tilde{L}/4$, where the shape calculation begins from the point of contact with the ground, and the gripper's position and orientation are determined by the three parameters $(k, \phi(0), \tilde{L})$.
 
 <p align="center">
 <img src="Readme_images/fig3.png" alt="" width="33%">
@@ -228,11 +228,11 @@ Since the curvature at the tip is zero, we have $s_0 = L_{gal}/4 \\ or \\ 3L_{ga
 </b></sup>
 </p>
 
-In Figure 7, we see that $s0=3L_{gal}/4$, when it happens the shape rotates symmetrically around the y-axis around the contact point. 
+In Figure 7, we see that $s0=3\tilde{L}/4$, when it happens the shape rotates symmetrically around the y-axis around the contact point. 
 
 ##### 3.3.2 Option 2 – Segment contact of the body
 In this case, we also begin calculating the flexible object shape from the endpoint touching the surface, but the constraint $C(S)$ is active. The first part is a straight line of length l,
-the length of the constraint, followed by an elastica shape of length $L_{new}=L−l$. In this case, $s_0=L_{gal}/4  \\ or \\ 3L_{gal}/4$, and $\phi(0)=0$. Therefore, the configuration space defining this shape is determined by the parameters $(k,l,L_{gal})$. 
+the length of the constraint, followed by an elastica shape of length $L_{new}=L−l$. In this case, $s_0=\tilde{L}/4  \\ or \\ 3\tilde{L}/4$, and $\phi(0)=0$. Therefore, the configuration space defining this shape is determined by the parameters $(k,l,\tilde{L})$. 
 
 The next figure will present Option 2 of the flexible body shape against a surface when held by a single gripper. 
 
@@ -249,7 +249,7 @@ To prevent the flexible object from slipping during placement on the tray, and t
 
 $$\phi_0 = \phi(0)\pm\tan^{-1}(1-2k^2)$$   (5)
 
-where $\phi_0$ is the direction of the reaction force. For $s_0 = L_{gal}/4$, a plus sign appears in Eq (5), for $s_0 = 3L_{gal}/4$, a minus sign appears. Thus, the friction cone constraint is defined as 
+where $\phi_0$ is the direction of the reaction force. For $s_0 = \tilde{L}/4$, a plus sign appears in Eq (5), for $s_0 = 3\tilde{L}/4$, a minus sign appears. Thus, the friction cone constraint is defined as 
 $\phi_0−\alpha(\hat n)<∣tan^{−1}\mu∣$, where $\alpha (\hat n)$ is the angle of the normal to the plane on which the flexible object is placed. For a horizontal table, we get $\alpha(\hat n)=\frac{\pi}{2}$.
 
 The next figure will graphically illustrate the non-slip constraint. 
@@ -271,11 +271,11 @@ $P\in \mathbb{R}^3$ and the rotation angle $\theta \in[0,2\pi]$ around the norma
 
 * Getting the DO ready for rolling so that its edge does not slip from the tray and the tray does not slip on the surface.  
 
-In this sub-problem, the configuration space parameters are $(k,\phi(0),L_{gal})$. 
+In this sub-problem, the configuration space parameters are $(k,\phi(0),\tilde{L})$. 
 
 * Pure rolling of the DO until it is placed.  
 
-In this sub-problem, the configuration space parameters are (k,l,L_{gal}). 
+In this sub-problem, the configuration space parameters are (k,l,\tilde{L}). 
 
 The next figure will illustrate the problem of placing the flexible object using the three sub-problems. 
 
