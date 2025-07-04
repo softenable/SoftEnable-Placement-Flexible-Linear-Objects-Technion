@@ -1,0 +1,9 @@
+float32 target_length
+float32 distance_from_tip
+string roll_direction # Use 'left' or 'right'
+sensor_msgs/JointState start_state
+geometry_msgs/Pose start_pose
+geometry_msgs/Pose target_pose
+---
+trajectory_msgs/JointTrajectory joint_trajectory
+trajectory_msgs/MultiDOFJointTrajectory cartesian_trajectory

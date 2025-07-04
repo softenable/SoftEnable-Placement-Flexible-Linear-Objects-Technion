@@ -1,0 +1,28 @@
+# Displacement Planner Configuration
+# This file contains parameters for the flexible object displacement planner
+
+# Robot Configuration
+urdf_file_path: "$(find displacement_planner)/config/softenable.urdf"
+tip_link: "dlr_gripper_center"
+
+# Object Properties (defaults - can be overridden by service requests)
+object_length: 0.25  # meters (used as fallback if not specified in request)
+
+# Friction Coefficients
+friction_coefficient_object_tray: 0.5
+friction_coefficient_tray_table: 0.1
+
+# Environment
+table_height: 0.0  # meters relative to world frame
+
+# Planning Parameters
+alpha: 0.6  # Alpha parameter for displacement planning algorithm
+
+# Trajectory Generation
+trajectory_time_step: 0.1  # seconds between trajectory points
+trajectory_skip_factor: 8   # Path decimation factor for smooth trajectory
+trajectory_interpolation_points: 8  # Number of interpolation points
+
+# Visualization
+publish_markers: true  # Enable/disable trajectory visualization markers
+marker_scale: 0.025   # Size of visualization spheres

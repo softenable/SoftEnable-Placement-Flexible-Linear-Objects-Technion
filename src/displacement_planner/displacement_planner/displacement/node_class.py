@@ -1,5 +1,6 @@
 import numpy as np
-from displacement_planner.displacement import utils as hf
+import displacement_planner.utils as hf
+
 
 class Node:
     """
@@ -188,6 +189,7 @@ class JointNode:
         self.theta = theta
         self.father = father
         self.jointsPose = []
+
 
 
 
