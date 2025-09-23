@@ -44,20 +44,22 @@ start_1 = node_class.Node(target_1, X0_S1, Y0_S1, Z0_S1, np.pi/2, theta_S1, 1, C
 
 # define target for sub-problem 2
 mu_T2 = 0
-L_gal_T2 = 2*L
+L_gal_T2 = 3.5*L
 target_2 = node_class.Target(target_1.X0, target_1.Y0, target_1.Z0, phi_0_T2, target_1.theta, mu_T2, C*L_gal_T2, L_gal_T2, 0, L, direction)
 
 # define target for sub-problem 3
 mu_T3 = 0
 l_T3 = 0.5*L
-L_gal_T3 = 4*(L - l_T3)
+L_gal_T3 = 4.5*(L - l_T3)
 target_3 = node_class.Target(target_2.X0, target_2.Y0, target_2.Z0, phi_0_T2, target_2.theta, mu_T3, C*L_gal_T3, L_gal_T3, l_T3, L, direction)
 
 # get full path
 t_start = time.time()
 
-path = dis.displacement(start_1, target_1, target_2, target_3, L, mu_fric, direction, h_table, alpha, urdf, q_start)
-
+path_1 = dis.displacement(start_1, target_1, L, mu_fric, direction, h_table, alpha, urdf, q_start, 1)
+path_2 = dis.displacement(target_1, target_2, L, mu_fric, direction, h_table, alpha, urdf, q_start,2)
+path_3 = dis.displacement(target_2, target_3, L, mu_fric, direction, h_table, alpha, urdf, q_start,3)
+path = [path_1,path_2,path_3]
 if path:
     path_1, path_2, path_3 = path
 
