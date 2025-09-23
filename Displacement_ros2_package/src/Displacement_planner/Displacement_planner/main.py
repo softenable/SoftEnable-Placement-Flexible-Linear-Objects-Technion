@@ -8,7 +8,7 @@ import pinocchio as pin
 import sys
 
 # define LDO parameters, environment parameters and direction displacement
-urdf = "/home/itay/pythonProject/elastica_scripts/iiwa14_with_ft_and_dlr_gripper/iiwa14_with_ft_and_dlr_gripper.urdf"# path of the URDF
+urdf = "./softenable.urdf"# path of the URDF
 urdf_filename = (
         urdf
         if len(sys.argv) < 2
@@ -57,9 +57,12 @@ target_3 = node_class.Target(target_2.X0, target_2.Y0, target_2.Z0, phi_0_T2, ta
 t_start = time.time()
 
 path_1 = dis.displacement(start_1, target_1, L, mu_fric, direction, h_table, alpha, urdf, q_start, 1)
-path_2 = dis.displacement(target_1, target_2, L, mu_fric, direction, h_table, alpha, urdf, q_start,2)
-path_3 = dis.displacement(target_2, target_3, L, mu_fric, direction, h_table, alpha, urdf, q_start,3)
-path = [path_1,path_2,path_3]
+print("path 1 done")
+path_2 = dis.displacement(path_1[-1], target_2, L, mu_fric, direction, h_table, alpha, urdf, path_1[-1].jointsPose, 2)
+print("path 2 done")
+path_3 = dis.displacement(path_2[-1], target_3, L, mu_fric, direction, h_table, alpha, urdf, path_2[-1].jointsPose, 3)
+print("path 3 done")
+path = [path_1, path_2, path_3]
 if path:
     path_1, path_2, path_3 = path
 
