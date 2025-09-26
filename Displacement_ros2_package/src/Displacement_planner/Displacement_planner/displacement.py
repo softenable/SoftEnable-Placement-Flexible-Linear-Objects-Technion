@@ -37,8 +37,8 @@ def displacement(start, target, L, mu_fric, direction, h_table, alpha, urdf, q_s
             return path_2
     elif mode == 3:
     # get path for sub-problem 3
-        start_3 = node_class.Node(target, target.X0, target.Y0, target.Z0, target.phi_0, target.theta,
-                                target.mu, target.S0, target.L_gal, target.l, [], alpha, L, direction)
+        start_3 = node_class.Node(target, start.X0, start.Y0, start.Z0, start.phi_0, start.theta,
+                                start.mu, start.S0, start.L_gal, start.l, [], alpha, L, direction)
         path_3 = A_star_displacement(start_3, target, Bound, mode, q_start)
         path_3.pop(-1)
         if not path_3:

@@ -74,7 +74,6 @@ def check_reach_target(node, target, bound):
     flag = 0
     if np.abs(node.X0 - target.X0) <= bound.dx and np.abs(node.Y0 - target.Y0) <= bound.dy and \
         np.abs(node.Z0 - target.Z0) <= bound.dz and np.abs(node.phi_0 - target.phi_0) <= bound.d_phi_0 and \
-        np.abs(node.mu - target.mu) <= bound.dmu and np.abs(node.L_gal - target.L_gal) <= bound.dL_gal and \
             np.abs(node.theta - target.theta) <= bound.d_theta and np.abs(node.l - target.l) <= bound.dl:
         flag = 1
     return flag

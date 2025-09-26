@@ -57,11 +57,11 @@ target_3 = node_class.Target(target_2.X0, target_2.Y0, target_2.Z0, phi_0_T2, ta
 t_start = time.time()
 
 path_1 = dis.displacement(start_1, target_1, L, mu_fric, direction, h_table, alpha, urdf, q_start, 1)
-print("path 1 done")
+# print("path 1 done", len(path_1), path_1, len(path_1))
 path_2 = dis.displacement(path_1[-1], target_2, L, mu_fric, direction, h_table, alpha, urdf, path_1[-1].jointsPose, 2)
-print("path 2 done")
+# print("path 2 done", len(path_2), path_2, len(path_2))
 path_3 = dis.displacement(path_2[-1], target_3, L, mu_fric, direction, h_table, alpha, urdf, path_2[-1].jointsPose, 3)
-print("path 3 done")
+# print("path 3 done", len(path_3), path_3, len(path_3))
 path = [path_1, path_2, path_3]
 if path:
     path_1, path_2, path_3 = path
@@ -72,6 +72,7 @@ if path:
     t = np.linspace(0, 1, num_t)
     s = np.linspace(0, 1, num_t)
 
+
     x1, y1, z1, phi_l_1, theta_1, l1, q1 = hf.get_smooth_path_displacement(path_1, skip, t, L, direction, urdf, path_1[0].jointsPose)
     x2, y2, z2, phi_l_2, theta_2, l2, q2 = hf.get_smooth_path_displacement(path_2, skip, t, L, direction, urdf, path_2[0].jointsPose)
     x3, y3, z3, phi_l_3, theta_3, l3, q3 = hf.get_smooth_path_displacement(path_3, skip, t, L, direction, urdf, path_3[0].jointsPose)
@@ -79,20 +80,22 @@ if path:
     t_end = time.time()
     ExecutionTime1_2_3 = t_end - t_start
     print("Execution Time =", ExecutionTime1_2_3)
-
+    # print(x1.shape, y1.shape, z1.shape, phi_l_1.shape, theta_1.shape, l1.shape)
+    # print(x2.shape, y2.shape, z2.shape, phi_l_2.shape, theta_2.shape, l2.shape)
+    # print(x3.shape, y3.shape, z3.shape, phi_l_3.shape, theta_3.shape, l3.shape)
     P1, R1 = hf.get_gripper_path(x1[:, -1], y1[:, -1], z1[:, -1], phi_l_1, theta_1)
     P2, R2 = hf.get_gripper_path(x2[:, -1], y2[:, -1], z2[:, -1], phi_l_2, theta_2)
-    P3, R3 = hf.get_gripper_path(x3[:, -1], y3[:, -1], z3[:, -1], phi_l_3, theta_3)
+    # P3, R3 = hf.get_gripper_path(x3[:, -1], y3[:, -1], z3[:, -1], phi_l_3, theta_3)
 
     # make x,y z to np.array
-    x = np.array(x1.tolist() + x2.tolist() + x3.tolist())
-    y = np.array(y1.tolist() + y2.tolist() + y3.tolist())
-    z = np.array(z1.tolist() + z2.tolist() + z3.tolist())
+    x = np.array(x1.tolist() + x2.tolist())# + x3.tolist())
+    y = np.array(y1.tolist() + y2.tolist())# + y3.tolist())
+    z = np.array(z1.tolist() + z2.tolist())# + z3.tolist())
 
     # check by graphs
     path = path_1 + path_2 + path_3
-    gripper_P = np.array(P1.tolist() + P2.tolist() + P3.tolist())
-    gripper_R = R1 + R2 + R3
+    gripper_P = np.array(P1.tolist() + P2.tolist())#+ P3.tolist())
+    gripper_R = R1 + R2# + R3
     robot_joint_pose = q1 + q2 + q3
     if direction == "right":
         a = 1
