@@ -5,7 +5,7 @@ import utils as hf
 import node_class
 
 
-def displacement(start, target, L, mu_fric, direction, h_table, alpha, urdf, q_start, mode):
+def displacement(start, target, L, mu_fric, direction, h_table, alpha, urdf, q_start, mode, ik_solver='fast'):
     # define the LDO and environment parameters
     gamma = np.arctan(mu_fric)
 
@@ -17,7 +17,10 @@ def displacement(start, target, L, mu_fric, direction, h_table, alpha, urdf, q_s
 
     # get path for sub-problem 1
     if mode == 1:
-        path_1 = A_star_displacement(start, target, Bound, mode, q_start)
+        path_1 = A_star_displacement(start, target, Bound, mode, q_start, ik_solver)
+        if path_1 is None:
+            print("path 1 not valid")
+            return False
         path_1.pop(-1)
         if not path_1:
             print("path 1 not valid")
@@ -28,7 +31,10 @@ def displacement(start, target, L, mu_fric, direction, h_table, alpha, urdf, q_s
     # get path for sub-problem 2
         start_2 = node_class.Node(target, start.X0, start.Y0, start.Z0, start.phi_0, start.theta,
                                 start.mu, start.S0, start.L_gal, start.l, [], alpha, L, direction)
-        path_2 = A_star_displacement(start_2, target, Bound, mode, q_start)
+        path_2 = A_star_displacement(start_2, target, Bound, mode, q_start, ik_solver)
+        if path_2 is None:
+            print("path 2 not valid")
+            return False
         path_2.pop(-1)
         if not path_2:
             print("path 2 not valid")
@@ -39,7 +45,10 @@ def displacement(start, target, L, mu_fric, direction, h_table, alpha, urdf, q_s
     # get path for sub-problem 3
         start_3 = node_class.Node(target, start.X0, start.Y0, start.Z0, start.phi_0, start.theta,
                                 start.mu, start.S0, start.L_gal, start.l, [], alpha, L, direction)
-        path_3 = A_star_displacement(start_3, target, Bound, mode, q_start)
+        path_3 = A_star_displacement(start_3, target, Bound, mode, q_start, ik_solver)
+        if path_3 is None:
+            print("path 3 not valid")
+            return False
         path_3.pop(-1)
         if not path_3:
             print("path 3 not valid")
@@ -48,10 +57,10 @@ def displacement(start, target, L, mu_fric, direction, h_table, alpha, urdf, q_s
             return path_3
     
 
-def A_star_displacement(start, target, Bound, mode, q_start):
+def A_star_displacement(start, target, Bound, mode, q_start, ik_solver='fast'):
     PATH = []
     flag = 0
-    CHECK = hf.check_node_disp(start, Bound, mode, q_start) and hf.check_node_disp(target, Bound, mode, q_start)
+    CHECK = hf.check_node_disp(start, Bound, mode, q_start, ik_solver) and hf.check_node_disp(target, Bound, mode, q_start, ik_solver)
     # start navigation
     Open = [start]
     Close = []
@@ -66,7 +75,7 @@ def A_star_displacement(start, target, Bound, mode, q_start):
                                          Bound.L, Bound.displacment_diraction)
                 flag = 1
                 break
-            Open, Close = hf.get_star(x_best, Open, Close, Bound, target, mode, q_start) # define this function
+            Open, Close = hf.get_star(x_best, Open, Close, Bound, target, mode, q_start, ik_solver) # define this function
     else:
         print("there is no valid path for sub-problem", mode)
     if flag:
@@ -78,4 +87,5 @@ def A_star_displacement(start, target, Bound, mode, q_start):
         return PATH
     else:
         print("there is no valid path fo sub-problem", mode)
+        return None
 
