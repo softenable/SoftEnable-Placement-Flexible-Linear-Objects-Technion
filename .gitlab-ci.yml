@@ -1,0 +1,130 @@
+---
+include:
+- file: /template.yaml
+  project: internal-open-source/pre-commit-hooks
+  ref: 0.168.0
+- file: /rules.yaml
+  project: includes/common
+  ref: main
+- file: /template.yaml
+  project: includes/release
+  ref: 3.5.5
+- file: /template.yaml
+  project: includes/docker
+  ref: 4.15.1
+
+variables:
+  REGISTRY: ${CI_REGISTRY}
+  DEV_REGISTRY: ${CI_REGISTRY}
+  DEV_IMAGE: "${DEV_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHA}"
+  ALDI: "true"
+  TARGET_ROS_PKG: "displacement_planner"
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_FORCE_HTTPS: "true"
+  BASE_DOCKER_BUILD_ARGS: "--secret id=netrc,src=/root/.netrc
+                    --secret id=HE_APT_GPG
+                    --build-arg DOCKER_UID=1000
+                    --build-arg DOCKER_GID=1000
+                    --build-arg DOCKER_USER=he
+                    --cache-from=type=local,src=.cache/"
+stages:
+- validate
+- build
+- deploy-dev
+- release
+- deploy
+
+workflow:
+  rules:
+  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    when: never
+  - when: always
+
+before_script:
+- . ${ALDI_SETUP}
+- git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ocado.tech/".insteadOf "git@gitlab.ocado.tech:"
+
+.docker_before_script:
+  before_script:
+  - . ${ALDI_SETUP}
+  - echo "${CI_JOB_TOKEN}" > /ci_token
+  # create or modify buildx node using driver-container, set `buildx` as default for `docker build`.
+  - |
+    docker buildx create --use --name he-ros-humble --driver docker-container --node he-ros-humble
+    docker buildx install
+
+.cache:
+  cache: &default_cache
+    key: $CI_PIPELINE_ID
+    paths:
+    - docker-image*
+    policy: pull-push
+
+# ==== Pre-commit ====
+pre-commit:
+  extends:
+  - .pre-commit
+  variables:
+    IMAGE_TAG: 0.168.0
+    SOURCE_BRANCH_FOR_BRANCH_PIPELINES: main
+  rules:
+  - if: $CI_COMMIT_BRANCH
+
+# ==== Build Docker Image ====
+build-docker:
+  stage: build
+  extends:
+  - .use-docker-build-image
+  - .docker_before_script
+  variables:
+    # Disable the normal docker image artifact saving, we do this manually as we have multiple images
+    DOCKER_IMAGE_ARTIFACT_DISABLE: true
+    CONTEXT: "."
+    DOCKERFILE: "docker/Dockerfile"
+  script:
+  - export DOCKER_BUILD_ARGS="${BASE_DOCKER_BUILD_ARGS} --output type=docker,dest=./docker-image.tar"
+  - build
+  rules:
+  - !reference [.on-main-branch, rules]
+  - !reference [.on-dev-branch, rules]
+  - !reference [.on-tag, rules]
+  cache:
+    <<: *default_cache
+
+
+# ==== Deploy Base config ====
+.deploy:
+  script:
+  - deploy
+
+.deploy-image-base:
+  stage: deploy
+  variables:
+    DOCKER_IMAGE_ARTIFACT: docker-image.tar
+  extends:
+  - .deploy
+  needs: [build-docker]
+  cache:
+    <<: *default_cache
+    # no need to push the cache when we're just deploying
+    policy: pull
+
+# ==== Deploy to Dev ====
+deploy-docker-dev:
+  extends:
+  - .deploy-docker-image-dev
+  - .deploy-image-base
+  rules:
+  - !reference [.on-dev-branch-manual-skippable, rules]
+
+# ==== Release ====
+auto-semantic-release:
+  extends: .deploy-auto-semantic-release
+  stage: release
+
+deploy-docker-release:
+  extends:
+  - .use-docker-build-image
+  - .deploy-image-base
+  rules:
+  - !reference [.on-tag, rules]

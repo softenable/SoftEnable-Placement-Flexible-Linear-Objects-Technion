@@ -27,13 +27,13 @@ The planner uses Pinocchio for robot kinematics and physics-based models for fle
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd softenable_placement_flexible_linear_object_ocado
+cd technion-placement-planner-ros2
 
 # Install dependencies
 rosdep install --from-paths src --ignore-src -r -y
 
-# Build the package
-colcon build --packages-select displacement_planner
+# Build the workspace
+colcon build --symlink-install
 
 # Source the workspace
 source install/setup.bash
@@ -83,7 +83,7 @@ ros2 service call /placement/plan_trajectory displacement_flexible_linear_object
 
 ```bash
 # Navigate to the project root
-cd softenable_placement_flexible_linear_object_ocado
+cd technion-placement-planner-ros2
 
 # Build the Docker image
 ./build.sh
@@ -141,21 +141,33 @@ ros2 launch displacement_planner displacement_planner_launch.py
 The displacement algorithm can also be used standalone without ROS:
 
 ```bash
-# Local usage
-python3 -m displacement_planner.displacement.main /path/to/robot.urdf
+# Using the console script (recommended)
+ros2 run displacement_planner displacement_calculator /path/to/robot.urdf
 
 # Docker usage
-./run.sh python3 -m displacement_planner.displacement.main /ws/src/displacement_planner/config/softenable.urdf
+./run.sh ros2 run displacement_planner displacement_calculator /ws/install/displacement_planner/share/displacement_planner/config/softenable.urdf
 
-# Or use the console script
-ros2 run displacement_planner displacement_calculator /path/to/robot.urdf
+# Or use Python module directly
+python3 -m displacement_planner.displacement.main /path/to/robot.urdf
 ```
 
 ## Configuration
 
 ### Service Parameters
 
-The service can be configured via ROS parameters in `config/displacement_planner.yaml`:
+The service can be configured via ROS parameters in `config/displacement_planner.yaml`. The configuration file uses the standard ROS 2 parameter structure:
+
+```yaml
+displacement_planner:
+  ros__parameters:
+    urdf_file_path: "$(find displacement_planner)/config/softenable.urdf"
+    object_length: 0.25
+    friction_coefficient_object_tray: 0.5
+    friction_coefficient_tray_table: 0.1
+    table_height: 0.0
+    alpha: 0.6
+    tip_link: "dlr_gripper_center"
+```
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|

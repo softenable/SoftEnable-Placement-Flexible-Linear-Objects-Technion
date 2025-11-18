@@ -2,7 +2,7 @@ cycler==0.11.0
 fonttools==4.29.1
 kiwisolver==1.3.2
 matplotlib==3.5.1
-numpy==1.26.4
+numpy
 pin==2.7.0
 plotly==5.22.0
 PyQt5==5.15.6
