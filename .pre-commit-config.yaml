@@ -1,0 +1,26 @@
+---
+default_language_version:
+  python: python3.10
+
+repos:
+- repo: git@gitlab.ocado.tech:internal-open-source/pre-commit-hooks.git
+  rev: 0.166.0
+  hooks:
+  - id: hadolint
+  - id: yamllint
+  # - id: mdl
+  - id: black
+    args: ["--line-length=120"]
+    exclude: ^src/displacement_planner/displacement_planner/displacement
+  - id: isort
+    exclude: ^src/displacement_planner/displacement_planner/displacement
+  - id: mypy
+    args: ["--no-incremental", "--strict", "--explicit-package-bases"]
+    additional_dependencies: [
+      '--index-url=https://nexus.ocado.tech/repository/pypi/simple',
+      types-PyYAML>=6.0.12, click>=8.1.3]
+    exclude: ^(test|src/displacement_planner/displacement_planner/displacement|src/displacement_planner/launch)
+- repo: git@gitlab.ocado.tech:internal-open-source/branch-commit-linter.git
+  rev: 1.1.0
+  hooks:
+  - id: branch_and_commit_lint

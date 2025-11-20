@@ -1,5 +1,6 @@
 import numpy as np
-import displacement_planner.utils as hf
+
+import displacement_planner.displacement.utils as hf
 
 
 class Node:
@@ -57,7 +58,7 @@ class Node:
             self.G = father.G + hf.get_dist(self, father, alpha)
         w = 0.88
         self.h = hf.get_dist(self, target, alpha)
-        self.F = (1 - w)*self.G + w*self.h
+        self.F = (1 - w) * self.G + w * self.h
         self.jointsPose = []
 
 
@@ -82,6 +83,7 @@ class Target:
     ZL - The z pose of EE
     phi_L - The angle of the EE
     """
+
     def __init__(self, X0, Y0, Z0, phi_0, theta, mu, S0, L_gal, l, L, direction):
         self.X0 = X0
         self.Y0 = Y0
@@ -133,9 +135,30 @@ class Bound:
     L_gal_max - The upper limit of L_gal
     """
 
-    def __init__(self, L, direction, gamma, x_max, x_min, y_max, y_min, z_max, z_min, theta_max, theta_min, dx, dy, dz,
-                 d_phi_0, d_theta, dmu, dL_gal, dl, alpha, L_gal_max):
-
+    def __init__(
+        self,
+        L,
+        direction,
+        gamma,
+        x_max,
+        x_min,
+        y_max,
+        y_min,
+        z_max,
+        z_min,
+        theta_max,
+        theta_min,
+        dx,
+        dy,
+        dz,
+        d_phi_0,
+        d_theta,
+        dmu,
+        dL_gal,
+        dl,
+        alpha,
+        L_gal_max,
+    ):
         self.L = L
         self.displacment_diraction = direction
         self.gamma = gamma
@@ -154,9 +177,9 @@ class Bound:
         self.theta_max = theta_max
         self.theta_min = theta_min
         self.max_mu = 1
-        self.min_mu = 1 - 2*0.908**2
+        self.min_mu = 1 - 2 * 0.908**2
         self.min_l = 0
-        self.max_l = 0.9*L
+        self.max_l = 0.9 * L
         self.dx = dx
         self.dy = dy
         self.dz = dz
@@ -181,6 +204,7 @@ class JointNode:
     father - The previous node
     jointsPose - The joint positions the robot gets
     """
+
     def __init__(self, XL, YL, ZL, phi_L, theta, father):
         self.XL = XL
         self.YL = YL
@@ -189,7 +213,3 @@ class JointNode:
         self.theta = theta
         self.father = father
         self.jointsPose = []
-
-
-
-

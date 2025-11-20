@@ -1,9 +1,11 @@
-from scipy import special
-import displacement_planner.node_class as node_class
-import pinocchio as pin
-import numpy as np
 import sys
+
+import numpy as np
+import pinocchio as pin
 from numpy.linalg import norm, solve
+from scipy import special
+
+import displacement_planner.displacement.node_class as node_class
 
 
 def get_shape(X0, Y0, PHI0, mu, L_gal, s0, s):
@@ -28,13 +30,13 @@ def get_shape(X0, Y0, PHI0, mu, L_gal, s0, s):
     """
     # elastica parameters:
     k = np.sqrt((1 - mu) / 2)
-    l = (4 * special.ellipk(k ** 2) / L_gal) ** 2
+    l = (4 * special.ellipk(k**2) / L_gal) ** 2
     a = np.sqrt(2 * (1 - mu) / l)
     # epsilon:
-    (sn, cn, dn, am) = special.ellipj(np.sqrt(l) * (s0 + s), k ** 2)
-    jaceps = special.ellipeinc(am, k ** 2)
-    (sn1, cn1, dn1, am1) = special.ellipj(np.sqrt(l) * s0, k ** 2)
-    jaceps0 = special.ellipeinc(am1, k ** 2)
+    (sn, cn, dn, am) = special.ellipj(np.sqrt(l) * (s0 + s), k**2)
+    jaceps = special.ellipeinc(am, k**2)
+    (sn1, cn1, dn1, am1) = special.ellipj(np.sqrt(l) * s0, k**2)
+    jaceps0 = special.ellipeinc(am1, k**2)
     # elastic shape before trans:
     x_tilda = (2 / np.sqrt(l)) * (jaceps - jaceps0) - s
     y_tilda = a * (cn - cn1)
@@ -55,14 +57,14 @@ def get_dist(node, father, alpha):
     :return: norm
     """
     dist = np.sqrt(
-        alpha * (node.phi_0 - father.phi_0)**2 +
-        alpha * (node.theta - father.theta)**2 +
-        (node.X0 - father.X0)**2 +
-        (node.Y0 - father.Y0)**2 +
-        (node.Z0 - father.Z0)**2 +
-        (node.mu - father.mu)**2 +
-        (node.L_gal - father.L_gal)**2 +
-        (node.l - father.l)**2
+        alpha * (node.phi_0 - father.phi_0) ** 2
+        + alpha * (node.theta - father.theta) ** 2
+        + (node.X0 - father.X0) ** 2
+        + (node.Y0 - father.Y0) ** 2
+        + (node.Z0 - father.Z0) ** 2
+        + (node.mu - father.mu) ** 2
+        + (node.L_gal - father.L_gal) ** 2
+        + (node.l - father.l) ** 2
     )
     return dist
 
@@ -72,10 +74,16 @@ def check_reach_target(node, target, bound):
     :return: check if the shape is in the target position
     """
     flag = 0
-    if np.abs(node.X0 - target.X0) <= bound.dx and np.abs(node.Y0 - target.Y0) <= bound.dy and \
-        np.abs(node.Z0 - target.Z0) <= bound.dz and np.abs(node.phi_0 - target.phi_0) <= bound.d_phi_0 and \
-        np.abs(node.mu - target.mu) <= bound.dmu and np.abs(node.L_gal - target.L_gal) <= bound.dL_gal and \
-            np.abs(node.theta - target.theta) <= bound.d_theta and np.abs(node.l - target.l) <= bound.dl:
+    if (
+        np.abs(node.X0 - target.X0) <= bound.dx
+        and np.abs(node.Y0 - target.Y0) <= bound.dy
+        and np.abs(node.Z0 - target.Z0) <= bound.dz
+        and np.abs(node.phi_0 - target.phi_0) <= bound.d_phi_0
+        and np.abs(node.mu - target.mu) <= bound.dmu
+        and np.abs(node.L_gal - target.L_gal) <= bound.dL_gal
+        and np.abs(node.theta - target.theta) <= bound.d_theta
+        and np.abs(node.l - target.l) <= bound.dl
+    ):
         flag = 1
     return flag
 
@@ -94,10 +102,16 @@ def check_in_list(neighbor, List, bound):
     if not List:
         return False
     for n in List:
-        flag = np.abs(neighbor.X0 - n.X0) <= bound.dx/2 and np.abs(neighbor.Y0 - n.Y0) <= bound.dy/2 and \
-            np.abs(neighbor.Z0 - n.Z0) <= bound.dz/2 and np.abs(neighbor.phi_0 - n.phi_0) <= bound.d_phi_0/2 and \
-            np.abs(neighbor.theta - n.theta) <= bound.d_theta/2 and np.abs(neighbor.mu - n.mu) <= bound.dmu/2 and \
-            np.abs(neighbor.L_gal - n.L_gal) <= bound.dL_gal/2 and np.abs(neighbor.l - n.l) <= bound.dl/2
+        flag = (
+            np.abs(neighbor.X0 - n.X0) <= bound.dx / 2
+            and np.abs(neighbor.Y0 - n.Y0) <= bound.dy / 2
+            and np.abs(neighbor.Z0 - n.Z0) <= bound.dz / 2
+            and np.abs(neighbor.phi_0 - n.phi_0) <= bound.d_phi_0 / 2
+            and np.abs(neighbor.theta - n.theta) <= bound.d_theta / 2
+            and np.abs(neighbor.mu - n.mu) <= bound.dmu / 2
+            and np.abs(neighbor.L_gal - n.L_gal) <= bound.dL_gal / 2
+            and np.abs(neighbor.l - n.l) <= bound.dl / 2
+        )
         if flag:
             return List.index(n)
     return False
@@ -113,7 +127,8 @@ def where_to_put_neighbor(neighbor, open_list):
     -------
     Sorting list
     """
-    if not open_list: return 0
+    if not open_list:
+        return 0
     index_a = 0
     index_b = len(open_list)
     mid = 0
@@ -175,7 +190,7 @@ def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
     x_best
     target
     bound
-    mode - indicate related sub-problem 
+    mode - indicate related sub-problem
     q_start - the joints vector of the robot in the start configuration
 
     Returns
@@ -187,70 +202,330 @@ def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
     elif bound.displacment_diraction == "left":
         C = 3 / 4
     if mode == 1:
-        n1 = node_class.Node(target, x_best.X0 + bound.dx, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n2 = node_class.Node(target, x_best.X0 - bound.dx, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n3 = node_class.Node(target, x_best.X0, x_best.Y0 + bound.dy, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n4 = node_class.Node(target, x_best.X0, x_best.Y0 - bound.dy, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n5 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0 + bound.dz, x_best.phi_0,
-                             x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n6 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0 - bound.dz, x_best.phi_0,
-                             x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n7 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta + bound.d_theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n8 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta - bound.d_theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+        n1 = node_class.Node(
+            target,
+            x_best.X0 + bound.dx,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n2 = node_class.Node(
+            target,
+            x_best.X0 - bound.dx,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n3 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0 + bound.dy,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n4 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0 - bound.dy,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n5 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0 + bound.dz,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n6 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0 - bound.dz,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n7 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta + bound.d_theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n8 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta - bound.d_theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
         neighbors = [n1, n2, n3, n4, n5, n6, n7, n8]
     elif mode == 2:
-        n1 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0 + bound.d_phi_0,
-                             x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n2 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0 - bound.d_phi_0,
-                             x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n3 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu + bound.dmu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n4 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu - bound.dmu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n5 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, C*(x_best.L_gal + bound.dL_gal), x_best.L_gal + bound.dL_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n6 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, C*(x_best.L_gal - bound.dL_gal), x_best.L_gal - bound.dL_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+        n1 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0 + bound.d_phi_0,
+            x_best.theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n2 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0 - bound.d_phi_0,
+            x_best.theta,
+            x_best.mu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n3 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu + bound.dmu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n4 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu - bound.dmu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n5 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            C * (x_best.L_gal + bound.dL_gal),
+            x_best.L_gal + bound.dL_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n6 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            C * (x_best.L_gal - bound.dL_gal),
+            x_best.L_gal - bound.dL_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
         neighbors = [n1, n2, n3, n4, n5, n6]
     elif mode == 3:
-        n1 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu + bound.dmu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n2 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu - bound.dmu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n3 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, C * (x_best.L_gal + bound.dL_gal), x_best.L_gal + bound.dL_gal,
-                             x_best.l, x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n4 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, C * (x_best.L_gal - bound.dL_gal), x_best.L_gal - bound.dL_gal,
-                             x_best.l, x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n5 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, C * (x_best.L_gal - bound.dl), x_best.L_gal - bound.dl,
-                             x_best.l + bound.dl, x_best, bound.L, bound.alpha, bound.displacment_diraction)
-        n6 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, C * (x_best.L_gal + bound.dl), x_best.L_gal + bound.dl,
-                             x_best.l - bound.dl, x_best, bound.L, bound.alpha, bound.displacment_diraction)
+        n1 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu + bound.dmu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n2 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu - bound.dmu,
+            x_best.S0,
+            x_best.L_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n3 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            C * (x_best.L_gal + bound.dL_gal),
+            x_best.L_gal + bound.dL_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n4 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            C * (x_best.L_gal - bound.dL_gal),
+            x_best.L_gal - bound.dL_gal,
+            x_best.l,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n5 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            C * (x_best.L_gal - bound.dl),
+            x_best.L_gal - bound.dl,
+            x_best.l + bound.dl,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
+        n6 = node_class.Node(
+            target,
+            x_best.X0,
+            x_best.Y0,
+            x_best.Z0,
+            x_best.phi_0,
+            x_best.theta,
+            x_best.mu,
+            C * (x_best.L_gal + bound.dl),
+            x_best.L_gal + bound.dl,
+            x_best.l - bound.dl,
+            x_best,
+            bound.L,
+            bound.alpha,
+            bound.displacment_diraction,
+        )
         neighbors = [n1, n2, n3, n4, n5, n6]
     for n in neighbors:
         open_list, close_list = get_neighbor(n, open_list, close_list, bound, mode, q_start)
@@ -283,9 +558,9 @@ def check_node_disp(node, Bound, mode, q_start):
         check_phi = Bound.max_phi_0 >= node.phi_0 >= Bound.min_phi_0
         check_mu = Bound.max_mu >= node.mu >= Bound.min_mu
         check_L_gal = Bound.L_gal_max >= node.L_gal >= 1.86 * (Bound.L - node.l)  # stability criteria
-        if Bound.displacment_diraction == 'right':  # friction cone check
+        if Bound.displacment_diraction == "right":  # friction cone check
             check_fric = np.pi / 2 + Bound.gamma >= node.phi_0 + np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
-        elif Bound.displacment_diraction == 'left':
+        elif Bound.displacment_diraction == "left":
             check_fric = np.pi / 2 + Bound.gamma >= node.phi_0 - np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
         check = check_phi and check_mu and check_L_gal and check_fric
     elif mode == 3:
@@ -326,16 +601,34 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
     """
     parameters = []
     for i in range(0, len(path), skip):
-        parameters.append([
-            path[i].mu, path[i].S0, path[i].L_gal, path[i].l,
-            path[i].phi_0, path[i].theta, path[i].X0, path[i].Y0, path[i].Z0
-        ])
+        parameters.append(
+            [
+                path[i].mu,
+                path[i].S0,
+                path[i].L_gal,
+                path[i].l,
+                path[i].phi_0,
+                path[i].theta,
+                path[i].X0,
+                path[i].Y0,
+                path[i].Z0,
+            ]
+        )
 
     if i != len(path) - 1:
-        parameters.append([
-            path[-1].mu, path[-1].S0, path[-1].L_gal, path[-1].l,
-            path[-1].phi_0, path[-1].theta, path[-1].X0, path[-1].Y0, path[-1].Z0
-        ])
+        parameters.append(
+            [
+                path[-1].mu,
+                path[-1].S0,
+                path[-1].L_gal,
+                path[-1].l,
+                path[-1].phi_0,
+                path[-1].theta,
+                path[-1].X0,
+                path[-1].Y0,
+                path[-1].Z0,
+            ]
+        )
 
     xs = []
     ys = []
@@ -346,7 +639,7 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
     q = []
     Node = [[]]
 
-    if direction == 'right':
+    if direction == "right":
         C = 1
     else:
         C = -1
@@ -356,12 +649,11 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
     for i in range(1, len(parameters)):
         for j in range(len(t)):
             line = parameters[i - 1] + t[j] * (parameters[i] - parameters[i - 1])
-            xt, zt, phi_t = get_shape(C * line[3], line[8], line[4], line[0], line[2], line[1], np.linspace(0, L - line[3], 50))
+            xt, zt, phi_t = get_shape(
+                C * line[3], line[8], line[4], line[0], line[2], line[1], np.linspace(0, L - line[3], 50)
+            )
 
-            R = np.array([
-                [np.cos(line[5]), -np.sin(line[5])],
-                [np.sin(line[5]), np.cos(line[5])]
-            ])
+            R = np.array([[np.cos(line[5]), -np.sin(line[5])], [np.sin(line[5]), np.cos(line[5])]])
             XY = np.dot(R, np.vstack([xt, np.zeros_like(xt)]))
             xs.append(XY[0, :] + line[6])
             ys.append(XY[1, :] + line[7])
@@ -369,8 +661,9 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
             phi_l_s.append(phi_t[-1])
             theta_s.append(line[5])
             ls.append(line[3])
-            node = node_class.JointNode(XL=xs[-1][-1], YL=ys[-1][-1], ZL=zs[-1][-1], phi_L=phi_l_s[-1],
-                                        theta=line[5], father=Node[-1])
+            node = node_class.JointNode(
+                XL=xs[-1][-1], YL=ys[-1][-1], ZL=zs[-1][-1], phi_L=phi_l_s[-1], theta=line[5], father=Node[-1]
+            )
             check, q_temp = IKFromURDF(urdf, node, q_start)
             q.append(q_temp.tolist())
             node.jointsPose = q_temp
@@ -405,17 +698,15 @@ def get_gripper_path(x, y, z, phi_L, theta):
     R = []
     P = np.column_stack((x, y, z))
     for i in range(len(phi_L)):
-        Rz = np.array([
-            [np.cos(theta[i]), -np.sin(theta[i]), 0],
-            [np.sin(theta[i]), np.cos(theta[i]), 0],
-            [0, 0, 1]
-        ])
+        Rz = np.array([[np.cos(theta[i]), -np.sin(theta[i]), 0], [np.sin(theta[i]), np.cos(theta[i]), 0], [0, 0, 1]])
 
-        Ry = np.array([
-            [np.cos(phi_L[i] + np.pi / 2), 0, -np.sin(phi_L[i] + np.pi / 2)],
-            [0, 1, 0],
-            [np.sin(phi_L[i] + np.pi / 2), 0, np.cos(phi_L[i] + np.pi / 2)]
-        ])
+        Ry = np.array(
+            [
+                [np.cos(phi_L[i] + np.pi / 2), 0, -np.sin(phi_L[i] + np.pi / 2)],
+                [0, 1, 0],
+                [np.sin(phi_L[i] + np.pi / 2), 0, np.cos(phi_L[i] + np.pi / 2)],
+            ]
+        )
 
         Ri = np.dot(Rz, Ry)
         R.append(Ri)
@@ -423,7 +714,7 @@ def get_gripper_path(x, y, z, phi_L, theta):
     return P, R
 
 
-def IKFromURDF(urdf:str, node, q_start):
+def IKFromURDF(urdf: str, node, q_start):
     """
     What the function do
     ____________________
@@ -439,12 +730,8 @@ def IKFromURDF(urdf:str, node, q_start):
     if valid: Ture and the joint position
     if not valid: false
     """
-    # You should change here to set up your own URDF file or just pass it as an argument of this example.
-    urdf_filename = (
-        urdf
-        if len(sys.argv) < 2
-        else sys.argv[1]
-    )
+    # Use the URDF path passed as a parameter (ignore sys.argv to avoid conflicts with ROS 2)
+    urdf_filename = urdf
 
     # Load the urdf model
     model = pin.buildModelFromUrdf(urdf_filename)
@@ -459,7 +746,7 @@ def IKFromURDF(urdf:str, node, q_start):
     if node.father:
         q = node.father.jointsPose
     else:
-        q = q_start # need to get from the robot joint the initial position
+        q = q_start  # need to get from the robot joint the initial position
     # print("q: %s" % q.T)
 
     eps = 1e-4
@@ -489,5 +776,3 @@ def IKFromURDF(urdf:str, node, q_start):
 
     else:
         return False
-
-
