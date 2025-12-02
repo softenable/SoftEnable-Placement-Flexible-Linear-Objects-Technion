@@ -55,14 +55,14 @@ def get_dist(node, father, alpha):
     :return: norm
     """
     dist = np.sqrt(
-        alpha * (node.phi_0 - father.phi_0)**2 +
-        alpha * (node.theta - father.theta)**2 +
-        (node.X0 - father.X0)**2 +
-        (node.Y0 - father.Y0)**2 +
-        (node.Z0 - father.Z0)**2 +
-        (node.mu - father.mu)**2 +
-        (node.L_gal - father.L_gal)**2 +
-        (node.l - father.l)**2
+        alpha * (node.phi_0 - father.phi_0) ** 2 +
+        alpha * (node.theta - father.theta) ** 2 +
+        (node.X0 - father.X0) ** 2 +
+        (node.Y0 - father.Y0) ** 2 +
+        (node.Z0 - father.Z0) ** 2 +
+        (node.mu - father.mu) ** 2 +
+        (node.L_gal - father.L_gal) ** 2 +
+        (node.l - father.l) ** 2
     )
     return dist
 
@@ -73,8 +73,7 @@ def check_reach_target(node, target, bound):
     """
     flag = 0
     if np.abs(node.X0 - target.X0) <= bound.dx and np.abs(node.Y0 - target.Y0) <= bound.dy and \
-        np.abs(node.Z0 - target.Z0) <= bound.dz and np.abs(node.phi_0 - target.phi_0) <= bound.d_phi_0 and \
-        np.abs(node.mu - target.mu) <= bound.dmu and np.abs(node.L_gal - target.L_gal) <= bound.dL_gal and \
+            np.abs(node.Z0 - target.Z0) <= bound.dz and np.abs(node.phi_0 - target.phi_0) <= bound.d_phi_0 and \
             np.abs(node.theta - target.theta) <= bound.d_theta and np.abs(node.l - target.l) <= bound.dl:
         flag = 1
     return flag
@@ -94,10 +93,10 @@ def check_in_list(neighbor, List, bound):
     if not List:
         return False
     for n in List:
-        flag = np.abs(neighbor.X0 - n.X0) <= bound.dx/2 and np.abs(neighbor.Y0 - n.Y0) <= bound.dy/2 and \
-            np.abs(neighbor.Z0 - n.Z0) <= bound.dz/2 and np.abs(neighbor.phi_0 - n.phi_0) <= bound.d_phi_0/2 and \
-            np.abs(neighbor.theta - n.theta) <= bound.d_theta/2 and np.abs(neighbor.mu - n.mu) <= bound.dmu/2 and \
-            np.abs(neighbor.L_gal - n.L_gal) <= bound.dL_gal/2 and np.abs(neighbor.l - n.l) <= bound.dl/2
+        flag = np.abs(neighbor.X0 - n.X0) <= bound.dx / 2 and np.abs(neighbor.Y0 - n.Y0) <= bound.dy / 2 and \
+               np.abs(neighbor.Z0 - n.Z0) <= bound.dz / 2 and np.abs(neighbor.phi_0 - n.phi_0) <= bound.d_phi_0 / 2 and \
+               np.abs(neighbor.theta - n.theta) <= bound.d_theta / 2 and np.abs(neighbor.mu - n.mu) <= bound.dmu / 2 and \
+               np.abs(neighbor.L_gal - n.L_gal) <= bound.dL_gal / 2 and np.abs(neighbor.l - n.l) <= bound.dl / 2
         if flag:
             return List.index(n)
     return False
@@ -142,7 +141,8 @@ def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
     close_list
     bound
     mode
-
+    q_start
+    T_wb
     Returns
     -------
     Sorted open and close lists
@@ -175,8 +175,9 @@ def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
     x_best
     target
     bound
-    mode - indicate related sub-problem 
+    mode - indicate related sub-problem
     q_start - the joints vector of the robot in the start configuration
+    T_wb
 
     Returns
     -------
@@ -226,10 +227,12 @@ def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
                              x_best.theta, x_best.mu - bound.dmu, x_best.S0, x_best.L_gal, x_best.l,
                              x_best, bound.L, bound.alpha, bound.displacment_diraction)
         n5 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, C*(x_best.L_gal + bound.dL_gal), x_best.L_gal + bound.dL_gal, x_best.l,
+                             x_best.theta, x_best.mu, C * (x_best.L_gal + bound.dL_gal), x_best.L_gal + bound.dL_gal,
+                             x_best.l,
                              x_best, bound.L, bound.alpha, bound.displacment_diraction)
         n6 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
-                             x_best.theta, x_best.mu, C*(x_best.L_gal - bound.dL_gal), x_best.L_gal - bound.dL_gal, x_best.l,
+                             x_best.theta, x_best.mu, C * (x_best.L_gal - bound.dL_gal), x_best.L_gal - bound.dL_gal,
+                             x_best.l,
                              x_best, bound.L, bound.alpha, bound.displacment_diraction)
         neighbors = [n1, n2, n3, n4, n5, n6]
     elif mode == 3:
@@ -268,7 +271,8 @@ def check_node_disp(node, Bound, mode, q_start):
     node
     Bound
     mode
-
+    q_start
+    T_wb
     Returns
     -------
     bool: Ture/False
@@ -280,22 +284,24 @@ def check_node_disp(node, Bound, mode, q_start):
         check_theta = Bound.theta_max >= node.theta >= Bound.theta_min
         check = check_x and check_y and check_z and check_theta
     elif mode == 2:
-        check_phi = Bound.max_phi_0 >= node.phi_0 >= Bound.min_phi_0
+        check_phi = Bound.max_phi_0 + 0.0001 >= node.phi_0 >= Bound.min_phi_0 - 0.0001
         check_mu = Bound.max_mu >= node.mu >= Bound.min_mu
         check_L_gal = Bound.L_gal_max >= node.L_gal >= 1.86 * (Bound.L - node.l)  # stability criteria
         if Bound.displacment_diraction == 'right':  # friction cone check
             check_fric = np.pi / 2 + Bound.gamma >= node.phi_0 + np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
         elif Bound.displacment_diraction == 'left':
             check_fric = np.pi / 2 + Bound.gamma >= node.phi_0 - np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
-        check = check_phi and check_mu and check_L_gal and check_fric
+        check_phi_L = Bound.phi_L_min <= node.phi_L <= Bound.phi_L_max
+        check = check_phi and check_mu and check_L_gal and check_fric and check_phi_L
     elif mode == 3:
         check_mu = Bound.max_mu >= node.mu >= Bound.min_mu
         check_L_gal = Bound.L_gal_max >= node.L_gal >= 1.86 * (Bound.L - node.l)  # stability criteria
         check_l = Bound.min_l <= node.l <= Bound.max_l
         check_fric = np.pi / 2 + Bound.gamma >= np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
-        check = check_mu and check_L_gal and check_l and check_fric
+        check_phi_L = Bound.phi_L_min <= node.phi_L <= Bound.phi_L_max
+        check = check_mu and check_L_gal and check_l and check_fric and check_phi_L
     else:
-        print("somthing straing!")
+        print("somthing strainge!")
         check = 0
     if check:
         check, q = IKFromURDF(Bound.urdf, node, q_start)
@@ -323,6 +329,8 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
     -------
     smooth path
     """
+    q_temp = q_start
+
     parameters = []
     for i in range(0, len(path), skip):
         parameters.append([
@@ -330,50 +338,74 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
             path[i].phi_0, path[i].theta, path[i].X0, path[i].Y0, path[i].Z0
         ])
 
+    # ensure last node is included if skip > 1
     if i != len(path) - 1:
         parameters.append([
             path[-1].mu, path[-1].S0, path[-1].L_gal, path[-1].l,
             path[-1].phi_0, path[-1].theta, path[-1].X0, path[-1].Y0, path[-1].Z0
         ])
 
-    xs = []
-    ys = []
-    zs = []
-    phi_l_s = []
-    theta_s = []
-    ls = []
+    xs, ys, zs = [], [], []
+    phi_l_s, theta_s, ls = [], [], []
     q = []
-    Node = [[]]
+    nodes = []  # instead of Node = [[]]
 
-    if direction == 'right':
-        C = 1
-    else:
-        C = -1
+    # direction sign for elastica parameterization
+    C = 1 if direction == "right" else -1
 
     parameters = np.array(parameters)
 
     for i in range(1, len(parameters)):
-        for j in range(len(t)):
-            line = parameters[i - 1] + t[j] * (parameters[i] - parameters[i - 1])
-            xt, zt, phi_t = get_shape(C * line[3], line[8], line[4], line[0], line[2], line[1], np.linspace(0, L - line[3], 50))
+        for tau in t:
+            line = parameters[i - 1] + tau * (parameters[i] - parameters[i - 1])
+
+            xt, zt, phi_t = get_shape(
+                C * line[3],  # l (with sign)
+                line[8],  # Z0
+                line[4],  # phi_0
+                line[0],  # mu
+                line[2],  # L_gal
+                line[1],  # S0
+                np.linspace(0, L - line[3], 50)
+            )
 
             R = np.array([
                 [np.cos(line[5]), -np.sin(line[5])],
                 [np.sin(line[5]), np.cos(line[5])]
             ])
+
             XY = np.dot(R, np.vstack([xt, np.zeros_like(xt)]))
+
             xs.append(XY[0, :] + line[6])
             ys.append(XY[1, :] + line[7])
             zs.append(zt)
             phi_l_s.append(phi_t[-1])
             theta_s.append(line[5])
             ls.append(line[3])
-            node = node_class.JointNode(XL=xs[-1][-1], YL=ys[-1][-1], ZL=zs[-1][-1], phi_L=phi_l_s[-1],
-                                        theta=line[5], father=Node[-1])
-            check, q_temp = IKFromURDF(urdf, node, q_start)
-            q.append(q_temp.tolist())
-            node.jointsPose = q_temp
-            Node.append(node)
+
+            # choose father only if there is a previous node
+            father = nodes[-1] if len(nodes) > 0 else None
+
+            node = node_class.JointNode(
+                XL=xs[-1][-1],
+                YL=ys[-1][-1],
+                ZL=zs[-1][-1],
+                phi_L=phi_l_s[-1],
+                theta=line[5],
+                father=father
+            )
+
+            ok, q_temp = IKFromURDF(urdf, node, q_start)
+
+            if not ok:
+                # if IK fails here, you can choose to skip this configuration
+                # or break; for now we just skip adding it
+                continue
+
+            q.append(q_temp.copy().tolist())
+            node.jointsPose = q_temp.copy()
+            nodes.append(node)
+
     xs = np.array(xs)
     ys = np.array(ys)
     zs = np.array(zs)
@@ -411,9 +443,9 @@ def get_gripper_path(x, y, z, phi_L, theta):
         ])
 
         Ry = np.array([
-            [np.cos(phi_L[i] + np.pi / 2), 0, -np.sin(phi_L[i] + np.pi / 2)],
+            [np.cos(phi_L[i] - np.pi / 2), 0, -np.sin(phi_L[i] - np.pi / 2)],
             [0, 1, 0],
-            [np.sin(phi_L[i] + np.pi / 2), 0, np.cos(phi_L[i] + np.pi / 2)]
+            [np.sin(phi_L[i] - np.pi / 2), 0, np.cos(phi_L[i] - np.pi / 2)]
         ])
 
         Ri = np.dot(Rz, Ry)
@@ -422,7 +454,7 @@ def get_gripper_path(x, y, z, phi_L, theta):
     return P, R
 
 
-def IKFromURDF(urdf:str, node, q_start):
+def IKFromURDF(urdf: str, node, q_start):
     """
     What the function do
     ____________________
@@ -447,21 +479,26 @@ def IKFromURDF(urdf:str, node, q_start):
 
     # Load the urdf model
     model = pin.buildModelFromUrdf(urdf_filename)
-    # print("model name: " + model.name)
 
     # Create data required by the algorithms
     data = model.createData()
     JOINT_ID = model.njoints - 1
     # Sample a start configuration
     P, R = get_gripper_path(node.XL, node.YL, node.ZL, [node.phi_L], [node.theta])
+
     oMdes = pin.SE3(R[0], np.array(P[0]))
-    if node.father:
-        q = node.father.jointsPose
+
+    if getattr(node, "father", None) is not None:
+        father_q = getattr(node.father, "jointsPose", None)
+        if father_q is not None and len(father_q) == model.nq:
+            q = np.asarray(father_q, dtype=float)
+        else:
+            q = np.asarray(q_start, dtype=float)
     else:
-        q = q_start # need to get from the robot joint the initial position
+        q = np.asarray(q_start, dtype=float)  # need to get from the robot joint the initial position
     # print("q: %s" % q.T)
 
-    eps = 1e-4
+    eps = 1e-3
     IT_MAX = 1000
     DT = 1e-1
     damp = 1e-12
@@ -484,9 +521,34 @@ def IKFromURDF(urdf:str, node, q_start):
         i += 1
 
     if success:
-        return [True, q]
-
+        if np.all(q[0:7] >= model.lowerPositionLimit[0:7]) and np.all(q[0:7] <= model.upperPositionLimit[0:7]):
+            return True, q
+        else:
+            return False, None
     else:
-        return False
+        return False, None
 
 
+def find_feasible_q_start(urdf: str, start, target_1, target_2, target_3):
+    model = pin.buildModelFromUrdf(urdf)
+    max_iter = 5000
+    i = 0
+    while True:
+        if i >= max_iter:
+            return 0
+        check, qs = IKFromURDF(urdf, start, sample_random_q(model.lowerPositionLimit, model.upperPositionLimit))
+        if check:
+            check, q1 = IKFromURDF(urdf, target_1, qs)
+            if check:
+                check, q2 = IKFromURDF(urdf, target_2, q1)
+                if check:
+                    check, q3 = IKFromURDF(urdf, target_3, q2)
+                    if check:
+                        return qs
+        i += 1
+
+
+def sample_random_q(joint_min, joint_max):
+    joint_min = np.asarray(joint_min, dtype=float)
+    joint_max = np.asarray(joint_max, dtype=float)
+    return joint_min + (joint_max - joint_min) * np.random.rand(joint_min.size)
