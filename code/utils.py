@@ -413,7 +413,7 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
     theta_s = np.array(theta_s)
     ls = np.array(ls)
 
-    return xs, ys, zs, phi_l_s, theta_s, ls, q
+    return xs, ys, zs, phi_l_s, theta_s, ls, q, nodes
 
 
 def get_gripper_path(x, y, z, phi_L, theta):

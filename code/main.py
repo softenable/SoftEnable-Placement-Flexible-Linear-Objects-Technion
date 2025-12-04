@@ -9,8 +9,20 @@ from pinocchio.visualize import MeshcatVisualizer
 import sys
 import os
 
+
+def path_to_joint_path(path: list[node_class.Node]) -> list[list[float]]:
+    """
+    Convert a list of Node objects to a list of joint position lists.
+
+    Args:
+        path (list[node_class.Node]): List of Node objects.
+    Returns:
+        list[list[float]]: List of joint position lists.
+    """
+    return [path[i].jointsPose[:7].tolist() for i in range(len(path)) if path[i].jointsPose is not None and len(path[i].jointsPose) > 0]
+
 # seed numpy
-np.random.seed(1)
+np.random.seed(3)
 
 # input T_wb - SE(3) transformation matrix from robot base frame to world reference frame (first touching point)
 # (further work)
@@ -73,29 +85,38 @@ if len(q_start) > 2:
     t_start = time.time()
 
     path_1 = dis.placement(start_1, target_1, L, mu_fric, direction, h_table, alpha, urdf, q_start, 1)
+    joint_path = path_to_joint_path(path_1)
     print("path 1 done")
     if path_1:
         path_2 = dis.placement(path_1[-1], target_2, L, mu_fric, direction, h_table, alpha, urdf, path_1[-1].jointsPose,
                                2)
+        joint_path += path_to_joint_path(path_2)
         print("path 2 done")
         if path_2:
             path_3 = dis.placement(path_2[-1], target_3, L, mu_fric, direction, h_table, alpha, urdf,
                                    path_2[-1].jointsPose, 3)
+            joint_path += path_to_joint_path(path_3)
             print("path 3 done")
             if path_3:
+                # Save joint trajectory to file
+                np.savetxt('../softenable_urdf/joint_trajectory.txt', joint_path, fmt='%.6f')
+                
                 skip = 5
                 num_t = 8
                 t = np.linspace(0, 1, num_t)
 
-                x1, y1, z1, phi_l_1, theta_1, l1, q1 = hf.get_smooth_path_displacement(path_1, skip, t, L, direction,
+                x1, y1, z1, phi_l_1, theta_1, l1, q1, path_1_smoothed = hf.get_smooth_path_displacement(path_1, skip, t, L, direction,
                                                                                        urdf,
                                                                                        path_1[0].jointsPose)
-                x2, y2, z2, phi_l_2, theta_2, l2, q2 = hf.get_smooth_path_displacement(path_2, skip, t, L, direction,
+                x2, y2, z2, phi_l_2, theta_2, l2, q2, path_2_smoothed = hf.get_smooth_path_displacement(path_2, skip, t, L, direction,
                                                                                        urdf,
                                                                                        path_2[0].jointsPose)
-                x3, y3, z3, phi_l_3, theta_3, l3, q3 = hf.get_smooth_path_displacement(path_3, skip, t, L, direction,
+                x3, y3, z3, phi_l_3, theta_3, l3, q3, path_3_smoothed = hf.get_smooth_path_displacement(path_3, skip, t, L, direction,
                                                                                        urdf,
                                                                                        path_3[0].jointsPose)
+
+                joint_path = path_to_joint_path(path_1_smoothed) + path_to_joint_path(path_2_smoothed) + path_to_joint_path(path_3_smoothed)
+                np.savetxt('../softenable_urdf/joint_trajectory_smoothed.txt', joint_path, fmt='%.6f')
 
                 t_end = time.time()
                 ExecutionTime1_2_3 = t_end - t_start
