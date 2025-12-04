@@ -1,0 +1,4 @@
+.venv
+softenable_urdf/joint_trajectory.txt
+softenable_urdf/joint_trajectory_smoothed.txt
+__pycache__/
