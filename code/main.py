@@ -9,6 +9,9 @@ from pinocchio.visualize import MeshcatVisualizer
 import sys
 import os
 
+# seed numpy
+np.random.seed(1)
+
 # input T_wb - SE(3) transformation matrix from robot base frame to world reference frame (first touching point)
 # (further work)
 R = np.eye(3)
