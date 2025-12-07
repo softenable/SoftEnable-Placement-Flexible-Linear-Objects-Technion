@@ -4,6 +4,8 @@ import pinocchio as pin
 import numpy as np
 import sys
 from numpy.linalg import norm, solve
+import meshcat.geometry as g
+import meshcat.transformations as tf
 
 
 def get_shape(X0, Y0, PHI0, mu, L_gal, s0, s):
@@ -67,7 +69,7 @@ def get_dist(node, father, alpha):
     return dist
 
 
-def check_reach_target(node, target, bound):
+def check_reach_target(node, target, bound, mode, q_start):
     """
     :return: check if the shape is in the target position
     """
@@ -75,7 +77,7 @@ def check_reach_target(node, target, bound):
     if np.abs(node.X0 - target.X0) <= bound.dx and np.abs(node.Y0 - target.Y0) <= bound.dy and \
             np.abs(node.Z0 - target.Z0) <= bound.dz and np.abs(node.phi_0 - target.phi_0) <= bound.d_phi_0 and \
             np.abs(node.theta - target.theta) <= bound.d_theta and np.abs(node.l - target.l) <= bound.dl:
-        flag = 1
+         flag = 1
     return flag
 
 
@@ -158,6 +160,8 @@ def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
             else:
                 index = where_to_put_neighbor(neighbor, open_list)
                 open_list.insert(index, neighbor)
+    else:
+        close_list.append(neighbor)
     return open_list, close_list
 
 
@@ -188,72 +192,71 @@ def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
     elif bound.displacment_diraction == "left":
         C = 3 / 4
     if mode == 1:
+        # target, X0, Y0, Z0, phi_0, theta, mu, S0, L_gal, l, father, alpha, L, direction
         n1 = node_class.Node(target, x_best.X0 + bound.dx, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n2 = node_class.Node(target, x_best.X0 - bound.dx, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n3 = node_class.Node(target, x_best.X0, x_best.Y0 + bound.dy, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n4 = node_class.Node(target, x_best.X0, x_best.Y0 - bound.dy, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n5 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0 + bound.dz, x_best.phi_0,
                              x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n6 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0 - bound.dz, x_best.phi_0,
                              x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n7 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta + bound.d_theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n8 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta - bound.d_theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         neighbors = [n1, n2, n3, n4, n5, n6, n7, n8]
     elif mode == 2:
         n1 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0 + bound.d_phi_0,
                              x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n2 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0 - bound.d_phi_0,
                              x_best.theta, x_best.mu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n3 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu + bound.dmu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n4 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu - bound.dmu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n5 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, C * (x_best.L_gal + bound.dL_gal), x_best.L_gal + bound.dL_gal,
-                             x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best.l, x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n6 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, C * (x_best.L_gal - bound.dL_gal), x_best.L_gal - bound.dL_gal,
-                             x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best.l, x_best, bound.alpha, bound.L, bound.displacment_diraction)
         neighbors = [n1, n2, n3, n4, n5, n6]
     elif mode == 3:
         n1 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu + bound.dmu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n2 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu - bound.dmu, x_best.S0, x_best.L_gal, x_best.l,
-                             x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n3 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, C * (x_best.L_gal + bound.dL_gal), x_best.L_gal + bound.dL_gal,
-                             x_best.l, x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best.l, x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n4 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, C * (x_best.L_gal - bound.dL_gal), x_best.L_gal - bound.dL_gal,
-                             x_best.l, x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best.l, x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n5 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, C * (x_best.L_gal - bound.dl), x_best.L_gal - bound.dl,
-                             x_best.l + bound.dl, x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best.l + bound.dl, x_best, bound.alpha, bound.L, bound.displacment_diraction)
         n6 = node_class.Node(target, x_best.X0, x_best.Y0, x_best.Z0, x_best.phi_0,
                              x_best.theta, x_best.mu, C * (x_best.L_gal + bound.dl), x_best.L_gal + bound.dl,
-                             x_best.l - bound.dl, x_best, bound.L, bound.alpha, bound.displacment_diraction)
+                             x_best.l - bound.dl, x_best, bound.alpha, bound.L, bound.displacment_diraction)
         neighbors = [n1, n2, n3, n4, n5, n6]
     for n in neighbors:
         open_list, close_list = get_neighbor(n, open_list, close_list, bound, mode, q_start)
@@ -416,39 +419,29 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
     return xs, ys, zs, phi_l_s, theta_s, ls, q
 
 
-def get_gripper_path(x, y, z, phi_L, theta):
-    """
-    What the function do
-    ____________________
+def get_gripper_path(path):
 
-    Parameters
-    ----------
-    x
-    y
-    z
-    phi_L
-    theta
-
-    Returns
-    -------
-
-    """
     R = []
-    P = np.column_stack((x, y, z))
-    for i in range(len(phi_L)):
-        Rz = np.array([
-            [np.cos(theta[i]), -np.sin(theta[i]), 0],
-            [np.sin(theta[i]), np.cos(theta[i]), 0],
-            [0, 0, 1]
-        ])
-
-        Ry = np.array([
-            [np.cos(phi_L[i] - np.pi / 2), 0, -np.sin(phi_L[i] - np.pi / 2)],
+    P = []
+    Rx = np.array([
+            [1, 0, 0],
+            [0, 0, 1],
+            [0, -1, 0]
+    ])
+    for n in path:
+        Ryt = np.array([
+            [np.cos(np.pi/2 - n.theta), 0, np.sin(np.pi/2 - n.theta)],
             [0, 1, 0],
-            [np.sin(phi_L[i] - np.pi / 2), 0, np.cos(phi_L[i] - np.pi / 2)]
+            [-np.sin(np.pi/2 - n.theta), 0, np.cos(np.pi/2 - n.theta)]
         ])
-
-        Ri = np.dot(Rz, Ry)
+        Rxyt = np.dot(Rx, Ryt)
+        Rxtt = np.array([
+            [1, 0, 0],
+            [0, np.cos(n.phi_L - np.pi/2), -np.sin(n.phi_L - np.pi/2)],
+            [0, np.sin(n.phi_L - np.pi/2), np.cos(n.phi_L - np.pi/2)]
+        ])
+        P.append(np.array([n.XL, n.YL, n.ZL]))
+        Ri = np.dot(Rxyt, Rxtt)
         R.append(Ri)
 
     return P, R
@@ -456,38 +449,50 @@ def get_gripper_path(x, y, z, phi_L, theta):
 
 def IKFromURDF(urdf: str, node, q_start):
     """
-    What the function do
-    ____________________
-    compute the IK based on the urdf
+    Inverse kinematics that aligns the frame 'placement_link'
+    with a desired SE3 pose computed from the node parameters.
+
+    The desired pose is defined in the WORLD frame, and we
+    directly control the placement_link frame (not the last joint).
 
     Parameters
     ----------
-    urdf
-    node
+    urdf : str
+        Path to URDF file.
+    node : object
+        Node with attributes XL, YL, ZL, phi_L, theta, and possibly father.
+    q_start : array-like
+        Initial guess for joint configuration.
 
     Returns
     -------
-    if valid: Ture and the joint position
-    if not valid: false
+    (success, q) : (bool, np.ndarray or None)
+        - success = True if IK converged within limits
+        - q is the found configuration (or None if failure)
     """
-    # You should change here to set up your own URDF file or just pass it as an argument of this example.
-    urdf_filename = (
-        urdf
-        if len(sys.argv) < 2
-        else sys.argv[1]
-    )
-
-    # Load the urdf model
+    # -----------------------------------------------------------
+    # 1. Load model from URDF
+    # -----------------------------------------------------------
+    urdf_filename = urdf if len(sys.argv) < 2 else sys.argv[1]
     model = pin.buildModelFromUrdf(urdf_filename)
-
-    # Create data required by the algorithms
     data = model.createData()
-    JOINT_ID = model.njoints - 1
-    # Sample a start configuration
-    P, R = get_gripper_path(node.XL, node.YL, node.ZL, [node.phi_L], [node.theta])
 
-    oMdes = pin.SE3(R[0], np.array(P[0]))
+    # Frame id of placement_link
+    placement_id = model.getFrameId("placement_link")
 
+    # -----------------------------------------------------------
+    # 2. Desired pose oMdes of placement_link in WORLD frame
+    # -----------------------------------------------------------
+    # Here we assume that (XL, YL, ZL, phi_L, theta) are already
+    # expressed in the WORLD frame. If they are in another frame,
+    # you must convert them accordingly.
+    P, R = get_gripper_path([node])
+
+    oMdes = pin.SE3(R[0], np.array(P[0]))   # WORLD -> desired placement_link
+
+    # -----------------------------------------------------------
+    # 3. Choose initial guess q
+    # -----------------------------------------------------------
     if getattr(node, "father", None) is not None:
         father_q = getattr(node.father, "jointsPose", None)
         if father_q is not None and len(father_q) == model.nq:
@@ -495,36 +500,58 @@ def IKFromURDF(urdf: str, node, q_start):
         else:
             q = np.asarray(q_start, dtype=float)
     else:
-        q = np.asarray(q_start, dtype=float)  # need to get from the robot joint the initial position
-    # print("q: %s" % q.T)
+        q = np.asarray(q_start, dtype=float)
 
+    # -----------------------------------------------------------
+    # 4. Iterative IK on placement_link frame
+    # -----------------------------------------------------------
     eps = 1e-3
     IT_MAX = 1000
     DT = 1e-1
     damp = 1e-12
-    i = 0
 
-    while True:
+    success = False
+
+    for it in range(IT_MAX):
+        # Forward kinematics and frame placements
         pin.forwardKinematics(model, data, q)
-        iMd = data.oMi[JOINT_ID].actInv(oMdes)
-        err = pin.log(iMd).vector  # in joint frame
+        pin.updateFramePlacements(model, data)
+
+        # Current pose of placement_link in WORLD frame
+        oMf = data.oMf[placement_id]
+
+        # Pose error in the local frame of placement_link
+        # iMd = current_pose^-1 * desired_pose
+        iMd = oMf.actInv(oMdes)
+        err = pin.log(iMd).vector  # 6D error (orientation + position)
+
         if norm(err) < eps:
             success = True
             break
-        if i >= IT_MAX:
-            success = False
-            break
-        J = pin.computeJointJacobian(model, data, q, JOINT_ID)  # in joint frame
-        J = -np.dot(pin.Jlog6(iMd.inverse()), J)
-        v = -J.T.dot(solve(J.dot(J.T) + damp * np.eye(6), err))
-        q = pin.integrate(model, q, v * DT)
-        i += 1
 
+        # 6xN frame Jacobian in LOCAL frame
+        J6 = pin.computeFrameJacobian(model, data, q, placement_id,
+                                      pin.ReferenceFrame.LOCAL)
+
+        # Map it with Jlog6 (same idea as your joint-based IK)
+        J = -pin.Jlog6(iMd.inverse()) @ J6
+
+        # Damped least-squares step
+        v = -J.T @ solve(J @ J.T + damp * np.eye(6), err)
+
+        # Integrate configuration
+        q = pin.integrate(model, q, v * DT)
+
+    # -----------------------------------------------------------
+    # 5. Return result (with joint limit check if you want)
+    # -----------------------------------------------------------
     if success:
-        if np.all(q[0:7] >= model.lowerPositionLimit[0:7]) and np.all(q[0:7] <= model.upperPositionLimit[0:7]):
-            return True, q
-        else:
-            return False, None
+        # Example: check only first 7 (KUKA iiwa) are inside limits
+        if model.lowerPositionLimit.shape[0] >= 7:
+            if not (np.all(q[:7] >= model.lowerPositionLimit[:7]) and
+                    np.all(q[:7] <= model.upperPositionLimit[:7])):
+                return False, None
+        return True, q
     else:
         return False, None
 
@@ -552,3 +579,96 @@ def sample_random_q(joint_min, joint_max):
     joint_min = np.asarray(joint_min, dtype=float)
     joint_max = np.asarray(joint_max, dtype=float)
     return joint_min + (joint_max - joint_min) * np.random.rand(joint_min.size)
+
+
+def path_to_robot_joint_pose(path):
+    """
+    Convert a path (list of Node objects) to a list of joint configurations.
+
+    Parameters
+    ----------
+    path : list of node_class.Node
+        Output path from displacement.A_star_displacement / displacement.displacement.
+        Each node is expected to have 'jointsPose' filled by the IK.
+
+    Returns
+    -------
+    robot_joint_pose : list of np.ndarray
+        List of joint vectors q_i, one per node along the path.
+    """
+    robot_joint_pose = []
+
+    for i, node in enumerate(path):
+        if getattr(node, "jointsPose", None) is None or len(node.jointsPose) == 0:
+            raise ValueError(f"Node {i} has empty jointsPose – IK was not stored.")
+
+        q = np.asarray(node.jointsPose, dtype=float)
+        robot_joint_pose.append(q)
+
+    return robot_joint_pose
+
+
+def get_path_shapes(path, L, direction, num_points=50):
+    """
+    Compute the elastica shape (x, y, z) of the phantom for each node in the path,
+    without interpolation and without IK.
+
+    Parameters
+    ----------
+    path : list of Node
+        Full path from A* (each node has mu, S0, L_gal, l, phi_0, theta, X0, Y0, Z0).
+    L : float
+        phantom length.
+    direction : str
+        'right' or 'left' – used to set the sign in the elastica parameterization.
+    num_points : int, optional
+        Number of discretization points along the cable for each shape (default: 50).
+
+    Returns
+    -------
+    x, y, z : np.ndarray
+        Arrays of shape (N_nodes, num_points), where each row is one phantom shape.
+    """
+
+    xs = []
+    ys = []
+    zs = []
+    xs_rest = []
+    ys_rest = []
+    zs_rest = []
+    # sign for elastica parameterization (same as in get_smooth_path_displacement)
+    C = 1 if direction == "right" else -1
+
+    for node in path:
+        # arclength samples along the free part of the cable (0..L - l)
+        s_samples = np.linspace(0, L - node.l, num_points)
+
+        # elastica in local X-Z plane (like in get_smooth_path_displacement)
+        xt, zt, phi_t = get_shape(
+            C * node.l,   # signed l
+            node.Z0,       # Z0
+            node.phi_0,       # phi_0
+            node.mu,       # mu
+            node.L_gal,       # L_gal
+            node.S0,       # S0
+            s_samples
+        )
+
+        # rotate around Z by theta to get global X-Y
+        R = np.array([
+            [np.cos(node.theta), -np.sin(node.theta)],
+            [np.sin(node.theta),  np.cos(node.theta)]
+        ])
+
+        XY = np.dot(R, np.vstack([xt, np.zeros_like(xt)]))
+
+        # translate by (X0, Y0)
+        xs.append(XY[0, :] + node.X0)
+        ys.append(XY[1, :] + node.Y0)
+        zs.append(zt)
+
+    xs = np.array(xs)
+    ys = np.array(ys)
+    zs = np.array(zs)
+
+    return xs, ys, zs
