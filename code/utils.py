@@ -633,9 +633,6 @@ def get_path_shapes(path, L, direction, num_points=50):
     xs = []
     ys = []
     zs = []
-    xs_rest = []
-    ys_rest = []
-    zs_rest = []
     # sign for elastica parameterization (same as in get_smooth_path_displacement)
     C = 1 if direction == "right" else -1
 
@@ -672,3 +669,4 @@ def get_path_shapes(path, L, direction, num_points=50):
     zs = np.array(zs)
 
     return xs, ys, zs
+
