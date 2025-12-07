@@ -83,16 +83,9 @@ if len(q_start) > 2:
                 path = path_1 + path_2 + path_3
                 P, R = hf.get_gripper_path(path)
                 robot_joint_pose = hf.path_to_robot_joint_pose(path)
-                x, y, z = hf.get_shapes(path, L, direction, h_table)
+                x, y, z = hf.get_path_shapes(path, L, direction)
                 #
-                vis.animate_robot_and_cable_meshcat(
-                    urdf,
-                    robot_joint_pose,
-                    x,
-                    y,
-                    z,
-                    dt=0.03,
-                )
+                vis.animate_robot_and_cable_meshcat(urdf, robot_joint_pose, x, y, z, dt=0.03)
                 vis.plot_graph(path, direction)
 
 else:
