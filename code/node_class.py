@@ -42,11 +42,11 @@ class Node:
         self.mu = mu
         self.S0 = S0
         self.L_gal = L_gal
-        XY = np.array([[X0], [Y0]]) + np.dot(R, np.array([[XL], [0]]))
+        XY = np.array([X0, Y0]) + np.dot(R, np.array([XL, 0]))
         self.XL = XY[0]
         self.YL = XY[1]
         self.ZL = ZL
-        self.phi_L = phi_L - np.pi
+        self.phi_L = phi_L
         self.l = l
         self.theta = theta
         if not father:
@@ -58,7 +58,11 @@ class Node:
         w = 0.88
         self.h = hf.get_dist(self, target, alpha)
         self.F = (1 - w)*self.G + w*self.h
-        self.jointsPose = []
+        self.jointsPose = None
+        self._target = target
+        self._alpha = alpha
+        self.L = L
+        self._direction = direction
 
 
 class Target:
@@ -95,11 +99,11 @@ class Target:
         self.mu = mu
         self.S0 = S0
         self.L_gal = L_gal
-        XY = np.array([[X0], [Y0]]) + np.dot(R, np.array([[XL], [0]]))
+        XY = np.array([X0, Y0]) + np.dot(R, np.array([XL, 0]))
         self.XL = XY[0]
         self.YL = XY[1]
         self.ZL = ZL
-        self.phi_L = phi_L - np.pi
+        self.phi_L = phi_L
         self.l = l
         self.theta = theta
         self.father = []
@@ -193,3 +197,7 @@ class JointNode:
         self.theta = theta
         self.father = father
         self.jointsPose = []
+
+
+
+
