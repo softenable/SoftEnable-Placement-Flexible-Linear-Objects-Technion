@@ -2,7 +2,7 @@ import time
 import numpy as np
 import utils as hf
 import node_class
-import placement as dis
+import displacement as dis
 import visualize_urdf as vis
 import os
 
