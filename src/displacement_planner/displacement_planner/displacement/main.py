@@ -13,12 +13,14 @@ from typing import Any, Dict, List, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pinocchio as pin
+import argparse
 
-import displacement_planner.displacement as dis
+import displacement_planner.displacement.displacement as dis
 import displacement_planner.displacement.node_class as node_class
 
 # Import local modules with correct path
 import displacement_planner.displacement.utils as hf
+import displacement_planner.displacement.visualize_urdf as vis
 
 
 class DisplacementCalculator:
@@ -32,7 +34,7 @@ class DisplacementCalculator:
     def __init__(
         self,
         urdf_path: str,
-        object_length: float = 0.25,
+        object_length: float = 0.3,
         table_height: float = 0.0,
         friction_coefficient: float = 0.1,
         alpha: float = 0.6,
@@ -55,7 +57,7 @@ class DisplacementCalculator:
 
         # Load robot model
         try:
-            self.model = pin.buildModelFromUrdf(urdf_path)
+            self.model = pin.buildModelFromUrdf(self.urdf_path)
             self.data = self.model.createData()
         except Exception as e:
             raise RuntimeError(f"Failed to load robot model from {urdf_path}: {e}")
@@ -65,7 +67,7 @@ class DisplacementCalculator:
         start_pose: List[float],
         target_pose: List[float],
         q_start: Optional[np.ndarray] = None,
-        direction: str = "right",
+        direction: str = "left",
     ) -> Optional[Dict[str, Any]]:
         """
         Plan displacement trajectory for flexible object.
@@ -79,8 +81,6 @@ class DisplacementCalculator:
         Returns:
             Dictionary containing trajectory data or None if planning failed
         """
-        if q_start is None:
-            q_start = pin.neutral(self.model)
 
         # Validate direction
         if direction not in ["right", "left"]:
@@ -96,33 +96,38 @@ class DisplacementCalculator:
 
         # Create target nodes for the three sub-problems
         start_1, target_1, target_2, target_3 = self._create_targets(start_pose, target_pose, direction, C, phi_0_T2)
-
-        # Execute displacement planning
         t_start = time.time()
-        path = dis.displacement(
-            start_1,
-            target_1,
-            target_2,
-            target_3,
-            self.object_length,
-            self.mu_fric,
-            direction,
-            self.table_height,
-            self.alpha,
-            self.urdf_path,
-            q_start,
-        )
+        if q_start is None:
+            q_start = hf.find_feasible_q_start(self.urdf_path, start_1, target_1, target_2, target_3)
+            # q_start = pin.neutral(self.model)
 
-        if not path:
-            return None
+        path_1 = dis.placement(start_1, target_1, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, q_start, 1)
 
-        # Generate smooth trajectories
-        trajectory_data = self._generate_trajectories(path, direction, q_start)
+        if not path_1:
+            print("Path for sub-problem 1 not found")
+            return []
+        print("Sub-problem 1 completed, planning sub-problem 2...")
 
-        planning_time = time.time() - t_start
-        trajectory_data["planning_time"] = planning_time
+        path_2 = dis.placement(path_1[-1], target_2, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, path_1[-1].jointsPose, 2)
 
-        return trajectory_data
+        if not path_2:
+            print("Path for sub-problem 2 not found")
+            return []
+        print("Sub-problem 2 completed, planning sub-problem 2...")
+
+        path_3 = dis.placement(path_2[-1], target_3, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, path_2[-1].jointsPose, 3)
+
+        if not path_3:
+            print("Path for sub-problem 3 not found")
+            return []
+        print("Sub-problem 3 completed...")
+
+        return {
+            "path": path_1 + path_2 + path_3,
+            "combined_joint_trajectory": hf.path_to_robot_joint_pose(path_1 + path_2 + path_3),
+            "planning_time": time.time() - t_start
+            }
+
 
     def _create_targets(
         self, start_pose: List[float], target_pose: List[float], direction: str, C: float, phi_0_T2: float
@@ -132,10 +137,10 @@ class DisplacementCalculator:
         X0_T1, Y0_T1, Z0_T1 = target_pose
 
         # Ensure target is at table level
-        Z0_T1 = max(Z0_T1, self.table_height)
+        # Z0_T1 = max(Z0_T1, self.table_height)
 
         theta_S1 = np.pi / 2
-        theta_T1 = 0
+        theta_T1 = np.pi / 2.5
         L_gal_S = 2 * self.object_length
 
         # Sub-problem 1: Initial placement
@@ -162,7 +167,7 @@ class DisplacementCalculator:
 
         # Sub-problem 2: Rolling phase
         mu_T2 = 0
-        L_gal_T2 = 2 * self.object_length
+        L_gal_T2 = 3 * self.object_length
         target_2 = node_class.Target(
             target_1.X0,
             target_1.Y0,
@@ -180,7 +185,7 @@ class DisplacementCalculator:
         # Sub-problem 3: Final placement
         mu_T3 = 0
         l_T3 = 0.5 * self.object_length
-        L_gal_T3 = 4 * (self.object_length - l_T3)
+        L_gal_T3 = 3.5 * (self.object_length - l_T3)
         target_3 = node_class.Target(
             target_2.X0,
             target_2.Y0,
@@ -197,80 +202,14 @@ class DisplacementCalculator:
 
         return start_1, target_1, target_2, target_3
 
-    def _generate_trajectories(self, path: List, direction: str, q_start: np.ndarray) -> Dict[str, Any]:
-        """Generate smooth trajectories from displacement path."""
-        path_1, path_2, path_3 = path
-
-        # Trajectory generation parameters
-        skip = 8
-        num_t = 8
-        t = np.linspace(0, 1, num_t)
-
-        # Generate smooth paths for each sub-problem
-        x1, y1, z1, phi_l_1, theta_1, l1, q1 = hf.get_smooth_path_displacement(
-            path_1, skip, t, self.object_length, direction, self.urdf_path, path_1[0].jointsPose
-        )
-        x2, y2, z2, phi_l_2, theta_2, l2, q2 = hf.get_smooth_path_displacement(
-            path_2, skip, t, self.object_length, direction, self.urdf_path, path_2[0].jointsPose
-        )
-        x3, y3, z3, phi_l_3, theta_3, l3, q3 = hf.get_smooth_path_displacement(
-            path_3, skip, t, self.object_length, direction, self.urdf_path, path_3[0].jointsPose
-        )
-
-        # Get gripper paths
-        P1, R1 = hf.get_gripper_path(x1[:, -1], y1[:, -1], z1[:, -1], phi_l_1, theta_1)
-        P2, R2 = hf.get_gripper_path(x2[:, -1], y2[:, -1], z2[:, -1], phi_l_2, theta_2)
-        P3, R3 = hf.get_gripper_path(x3[:, -1], y3[:, -1], z3[:, -1], phi_l_3, theta_3)
-
-        # Combine results
-        return {
-            "paths": [path_1, path_2, path_3],
-            "object_positions": {"x": [x1, x2, x3], "y": [y1, y2, y3], "z": [z1, z2, z3]},
-            "object_orientations": {"phi": [phi_l_1, phi_l_2, phi_l_3], "theta": [theta_1, theta_2, theta_3]},
-            "gripper_positions": [P1, P2, P3],
-            "gripper_orientations": [R1, R2, R3],
-            "joint_trajectories": [q1, q2, q3],
-            "combined_joint_trajectory": q1 + q2 + q3,
-            "combined_gripper_positions": np.array(P1.tolist() + P2.tolist() + P3.tolist()),
-        }
-
-    def visualize_trajectory(self, trajectory_data: Dict[str, Any], show_plot: bool = True) -> None:
+    def visualize_trajectory(self, path, show_plot: bool = True, direction: str = "right") -> None:
         """Visualize the planned trajectory."""
-        if not trajectory_data:
-            print("No trajectory data to visualize")
-            return
-
-        paths = trajectory_data["paths"]
-        direction = "right" if len(paths) > 0 else "left"  # Default fallback
-
-        plt.figure("Displacement Trajectory")
-        plt.title("Flexible Object Displacement Planning")
-
-        a = 1 if direction == "right" else -1
-
-        colours = ["red", "green", "blue"]
-        labels = ["Phase 1: Placement", "Phase 2: Rolling", "Phase 3: Final"]
-
-        for phase_idx, (path, colour, label) in enumerate(zip(paths, colours, labels)):
-            for node in path:
-                xs, zs, phi_s = hf.get_shape(
-                    node.X0 + a * node.l,
-                    node.Z0,
-                    node.phi_0,
-                    node.mu,
-                    node.L_gal,
-                    node.S0,
-                    np.linspace(0, self.object_length - node.l),
-                )
-                plt.plot(xs, zs, color=colour, alpha=0.7, label=label if node == path[0] else "")
-
-        plt.xlabel("X Position (m)")
-        plt.ylabel("Z Position (m)")
-        plt.legend()
-        plt.grid(True)
-
+        P, R = hf.get_gripper_path(path)
+        robot_joint_pose = hf.path_to_robot_joint_pose(path)
+        x, y, z = hf.get_path_shapes(path, self.object_length, direction)
+        vis.animate_robot_and_cable_meshcat(self.urdf_path, robot_joint_pose, x, y, z, dt=0.03)
         if show_plot:
-            plt.show()
+            vis.plot_graph(path, direction)
 
 
 def main_calculation(
@@ -317,37 +256,48 @@ mainCalculation = main_calculation
 
 def main():
     """Example usage of the displacement calculator."""
-    if len(sys.argv) < 2:
-        print("Usage: python main.py <urdf_path>")
-        print("Example: python main.py /path/to/robot.urdf")
-        return
-
-    urdf_path = sys.argv[1]
+    parser = argparse.ArgumentParser(
+        description="Flexible Object Displacement Planning",
+    )
+    parser.add_argument(
+        "--urdf-path",
+        type=str,
+        help="Path to the robot URDF file",
+        default="/usr/share/iiwa-description/urdf/softenable.urdf"
+    )
+    parser.add_argument(
+        "--direction",
+        type=str,
+        help="Path to the robot URDF file",
+        default="left"
+    )
+    args = parser.parse_args()
+    urdf_path = args.urdf_path
 
     print("=== Displacement Planning Example ===")
     print(f"Robot URDF: {urdf_path}")
 
     # Example parameters
-    start_pose = [0.4, 0.2, 0.3]
-    target_pose = [0.5, 0.2, 0.0]
 
-    try:
-        calculator = DisplacementCalculator(urdf_path)
+    calculator = DisplacementCalculator(urdf_path)
 
-        print(f"Planning displacement from {start_pose} to {target_pose}")
-        result = calculator.plan_displacement(start_pose=start_pose, target_pose=target_pose, direction="right")
+    # start_pose = [0.8, 0.4, 0.3]
+    # target_pose = [0.6, 0.4, ]
+    start_pose = [0.8, 0.4, calculator.table_height + 0.3 * calculator.object_length]
+    target_pose = [0.6, 0.4, calculator.table_height]
 
-        if result:
-            print(f"Planning successful in {result['planning_time']:.2f} seconds")
-            print(f"Generated {len(result['combined_joint_trajectory'])} trajectory points")
+    print(f"Planning displacement from {start_pose} to {target_pose}")
+    result = calculator.plan_displacement(start_pose=start_pose, target_pose=target_pose, direction=args.direction)
 
-            # Visualize result
-            calculator.visualize_trajectory(result, show_plot=True)
-        else:
-            print("Planning failed")
+    if result:
+        print(f"Planning successful in {result['planning_time']:.2f} seconds")
+        print(f"Generated {len(result['combined_joint_trajectory'])} trajectory points")
 
-    except Exception as e:
-        print(f"Error: {e}")
+        # Visualize result
+        calculator.visualize_trajectory(result["path"], show_plot=True, direction=args.direction)
+    else:
+        print("Planning failed")
+
 
 
 if __name__ == "__main__":

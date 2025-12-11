@@ -36,18 +36,18 @@ class Node:
         self.Z0 = Z0
         self.phi_0 = phi_0
         if direction == "right":
-            [XL, ZL, phi_L] = hf.get_shape(l, Z0, phi_0, mu, L_gal, S0, L)
+            [XL, ZL, phi_L] = hf.get_shape(l, Z0, phi_0, mu, L_gal, S0, L - l)
         elif direction == "left":
-            [XL, ZL, phi_L] = hf.get_shape(-l, Z0, phi_0, mu, L_gal, S0, L)
+            [XL, ZL, phi_L] = hf.get_shape(-l, Z0, phi_0, mu, L_gal, S0, L - l)
         R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
         self.mu = mu
         self.S0 = S0
         self.L_gal = L_gal
-        XY = np.array([[X0], [Y0]]) + np.dot(R, np.array([[XL], [0]]))
+        XY = np.array([X0, Y0]) + np.dot(R, np.array([XL, 0]))
         self.XL = XY[0]
         self.YL = XY[1]
         self.ZL = ZL
-        self.phi_L = phi_L - np.pi
+        self.phi_L = phi_L
         self.l = l
         self.theta = theta
         if not father:
@@ -58,8 +58,12 @@ class Node:
             self.G = father.G + hf.get_dist(self, father, alpha)
         w = 0.88
         self.h = hf.get_dist(self, target, alpha)
-        self.F = (1 - w) * self.G + w * self.h
-        self.jointsPose = []
+        self.F = (1 - w)*self.G + w*self.h
+        self.jointsPose = None
+        self._target = target
+        self._alpha = alpha
+        self.L = L
+        self._direction = direction
 
 
 class Target:
@@ -83,25 +87,24 @@ class Target:
     ZL - The z pose of EE
     phi_L - The angle of the EE
     """
-
     def __init__(self, X0, Y0, Z0, phi_0, theta, mu, S0, L_gal, l, L, direction):
         self.X0 = X0
         self.Y0 = Y0
         self.Z0 = Z0
         self.phi_0 = phi_0
         if direction == "right":
-            [XL, ZL, phi_L] = hf.get_shape(l, Z0, phi_0, mu, L_gal, S0, L)
+            [XL, ZL, phi_L] = hf.get_shape(l, Z0, phi_0, mu, L_gal, S0, L - l)
         elif direction == "left":
-            [XL, ZL, phi_L] = hf.get_shape(-l, Z0, phi_0, mu, L_gal, S0, L)
+            [XL, ZL, phi_L] = hf.get_shape(-l, Z0, phi_0, mu, L_gal, S0, L - l)
         R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
         self.mu = mu
         self.S0 = S0
         self.L_gal = L_gal
-        XY = np.array([[X0], [Y0]]) + np.dot(R, np.array([[XL], [0]]))
+        XY = np.array([X0, Y0]) + np.dot(R, np.array([XL, 0]))
         self.XL = XY[0]
         self.YL = XY[1]
         self.ZL = ZL
-        self.phi_L = phi_L - np.pi
+        self.phi_L = phi_L
         self.l = l
         self.theta = theta
         self.father = []
@@ -133,6 +136,8 @@ class Bound:
     alpha - Wight vector
     eps - Max error
     L_gal_max - The upper limit of L_gal
+    phi_L_min - The lower limit of phi_L
+    phi_L_max - The upper limit of phi_L
     """
 
     def __init__(
@@ -158,7 +163,10 @@ class Bound:
         dl,
         alpha,
         L_gal_max,
+        phi_L_min,
+        phi_L_max
     ):
+
         self.L = L
         self.displacment_diraction = direction
         self.gamma = gamma
@@ -190,6 +198,8 @@ class Bound:
         self.dl = dl
         self.alpha = alpha
         self.L_gal_max = L_gal_max
+        self.phi_L_min = phi_L_min
+        self.phi_L_max = phi_L_max
 
 
 class JointNode:

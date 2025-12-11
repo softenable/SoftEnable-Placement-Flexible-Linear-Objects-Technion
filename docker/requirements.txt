@@ -16,3 +16,4 @@ tomli==2.0.1
 tornado==6.1
 tzdata==2024.1
 unicodedata2==14.0.0
+meshcat==0.3.2
