@@ -4,3 +4,4 @@ udev
 curl
 git 
 ssh
+he-iiwa-description=0.38.1
