@@ -4,8 +4,7 @@ import pinocchio as pin
 import numpy as np
 import sys
 from numpy.linalg import norm, solve
-import meshcat.geometry as g
-import meshcat.transformations as tf
+import copy
 
 
 def get_shape(X0, Y0, PHI0, mu, L_gal, s0, s):
@@ -48,7 +47,6 @@ def get_shape(X0, Y0, PHI0, mu, L_gal, s0, s):
     phi = PHI0 + phi_tilda
     return x, y, phi
 
-
 def get_dist(node, father, alpha):
     """
     :param node: node on the search graph
@@ -68,7 +66,6 @@ def get_dist(node, father, alpha):
     )
     return dist
 
-
 def check_reach_target(node, target, bound, mode, q_start):
     """
     :return: check if the shape is in the target position
@@ -79,7 +76,6 @@ def check_reach_target(node, target, bound, mode, q_start):
             np.abs(node.theta - target.theta) <= bound.d_theta and np.abs(node.l - target.l) <= bound.dl:
          flag = 1
     return flag
-
 
 def check_in_list(neighbor, List, bound):
     """
@@ -102,7 +98,6 @@ def check_in_list(neighbor, List, bound):
         if flag:
             return List.index(n)
     return False
-
 
 def where_to_put_neighbor(neighbor, open_list):
     """
@@ -127,7 +122,6 @@ def where_to_put_neighbor(neighbor, open_list):
         else:
             index_b = mid - 1
     return index_a
-
 
 def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
     """
@@ -163,7 +157,6 @@ def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
     else:
         close_list.append(neighbor)
     return open_list, close_list
-
 
 def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
     """
@@ -262,7 +255,6 @@ def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
         open_list, close_list = get_neighbor(n, open_list, close_list, bound, mode, q_start)
     return open_list, close_list
 
-
 def check_node_disp(node, Bound, mode, q_start):
     """
      What the function do
@@ -310,7 +302,6 @@ def check_node_disp(node, Bound, mode, q_start):
         check, q = IKFromURDF(Bound.urdf, node, q_start)
         node.jointsPose = q
     return check
-
 
 def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
     """
@@ -418,6 +409,129 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
 
     return xs, ys, zs, phi_l_s, theta_s, ls, q
 
+import numpy as np
+import node_class
+
+def get_smooth_path_displacement_nodes(path, skip, t, L, direction, urdf, q_start):
+    """
+    Smooth a planned path by interpolating between nodes and solving IK at each
+    interpolated step, returning a *path-like list of nodes* (same style as `path`).
+
+    Parameters
+    ----------
+    path : list[node_class.Node]
+        Original A* path.
+    skip : int
+        Take every `skip` nodes from the original path as interpolation keyframes.
+    t : array-like
+        Interpolation coefficients between consecutive keyframes, e.g. np.linspace(0,1,5).
+    L : float
+        Cable length.
+    direction : str
+        "right" or "left"
+    urdf : str
+        URDF path.
+    q_start : array-like
+        Initial joint config (seed) for IK.
+
+    Returns
+    -------
+    path_smooth : list[node_class.Node]
+        Smoothed path where each node has jointsPose and father pointer.
+        Only nodes for which IK succeeded are included.
+    """
+
+    # ---------- collect keyframes ----------
+    key_params = []
+    for i in range(0, len(path), skip):
+        key_params.append([
+            path[i].mu, path[i].S0, path[i].L_gal, path[i].l,
+            path[i].phi_0, path[i].theta, path[i].X0, path[i].Y0, path[i].Z0
+        ])
+
+    if len(path) > 0 and (len(key_params) == 0 or (path[-1].mu != key_params[-1][0] or path[-1].X0 != key_params[-1][6])):
+        key_params.append([
+            path[-1].mu, path[-1].S0, path[-1].L_gal, path[-1].l,
+            path[-1].phi_0, path[-1].theta, path[-1].X0, path[-1].Y0, path[-1].Z0
+        ])
+
+    key_params = np.asarray(key_params, dtype=float)
+
+    # direction sign for elastica parameterization
+    C = 1 if direction == "right" else -1
+
+    # ---------- build smoothed path ----------
+    path_smooth = []
+    q_temp = np.asarray(q_start, dtype=float)
+
+    # We need the same "target" object that your Node constructor expects.
+    # In your code, Node(...) expects `target` to compute heuristic/distances.
+    # For a smoothed path used ONLY for visualization/IK playback, we can pass
+    # the original last node as a dummy target (not used later).
+    dummy_target = path[-1] if len(path) > 0 else None
+
+    for i in range(1, len(key_params)):
+        p0 = key_params[i - 1]
+        p1 = key_params[i]
+
+        for tau in t:
+            line = p0 + tau * (p1 - p0)
+
+            mu, S0, L_gal, l = line[0], line[1], line[2], line[3]
+            phi_0, theta = line[4], line[5]
+            X0, Y0, Z0 = line[6], line[7], line[8]
+
+            # ---- compute cable end (XL,YL,ZL,phi_L) using your existing get_shape
+            xt, zt, phi_t = get_shape(
+                C * l,
+                Z0,
+                phi_0,
+                mu,
+                L_gal,
+                S0,
+                np.linspace(0, L - l, 50)
+            )
+
+            R = np.array([[np.cos(theta), -np.sin(theta)],
+                          [np.sin(theta),  np.cos(theta)]])
+            XY = R @ np.vstack([xt, np.zeros_like(xt)])
+
+            XL = float(XY[0, -1] + X0)
+            YL = float(XY[1, -1] + Y0)
+            ZL = float(zt[-1])
+            phi_L = float(phi_t[-1])
+
+            # ---- father pointer
+            father = path_smooth[-1] if len(path_smooth) > 0 else None
+
+            # ---- create a "path Node" (same class as A* path)
+            # IMPORTANT: your Node constructor computes XL/YL/ZL internally too.
+            # We pass l, mu, etc. so it stays consistent with your system.
+            node = node_class.Node(
+                dummy_target,
+                X0, Y0, Z0,
+                phi_0, theta,
+                mu, S0, L_gal, l,
+                father,
+                alpha=getattr(path[0], "_alpha", 0.0) if len(path) > 0 else 0.0,
+                L=L,
+                direction=direction
+            )
+
+            # If you want to force the computed end values (optional):
+            node.XL, node.YL, node.ZL, node.phi_L = XL, YL, ZL, phi_L
+
+            # ---- solve IK relative to this node
+            ok, q_temp = IKFromURDF(urdf, node, q_temp)
+            if not ok:
+                # Skip this sample if IK failed
+                continue
+
+            node.jointsPose = np.asarray(q_temp, dtype=float).copy()
+            path_smooth.append(node)
+
+    return path_smooth
+
 
 def get_gripper_path(path):
 
@@ -445,7 +559,6 @@ def get_gripper_path(path):
         R.append(Ri)
 
     return P, R
-
 
 def IKFromURDF(urdf: str, node, q_start):
     """
@@ -555,14 +668,13 @@ def IKFromURDF(urdf: str, node, q_start):
     else:
         return False, None
 
-
 def find_feasible_q_start(urdf: str, start, target_1, target_2, target_3):
     model = pin.buildModelFromUrdf(urdf)
     max_iter = 5000
     i = 0
     while True:
         if i >= max_iter:
-            return 0
+            return None
         check, qs = IKFromURDF(urdf, start, sample_random_q(model.lowerPositionLimit, model.upperPositionLimit))
         if check:
             check, q1 = IKFromURDF(urdf, target_1, qs)
@@ -574,12 +686,10 @@ def find_feasible_q_start(urdf: str, start, target_1, target_2, target_3):
                         return qs
         i += 1
 
-
 def sample_random_q(joint_min, joint_max):
     joint_min = np.asarray(joint_min, dtype=float)
     joint_max = np.asarray(joint_max, dtype=float)
     return joint_min + (joint_max - joint_min) * np.random.rand(joint_min.size)
-
 
 def path_to_robot_joint_pose(path):
     """
@@ -606,7 +716,6 @@ def path_to_robot_joint_pose(path):
         robot_joint_pose.append(q)
 
     return robot_joint_pose
-
 
 def get_path_shapes(path, L, direction, num_points=50):
     """
@@ -670,3 +779,84 @@ def get_path_shapes(path, L, direction, num_points=50):
 
     return xs, ys, zs
 
+def moving_average_1d(x, w):
+    """1D moving-average filter (edge-padded)."""
+    x = np.asarray(x, dtype=float)
+    if w <= 1:
+        return x.copy()
+    pad = w // 2
+    x_pad = np.pad(x, (pad, pad), mode="edge")
+    kernel = np.ones(w) / w
+    return np.convolve(x_pad, kernel, mode="valid")
+
+
+def moving_average_matrix(Q, w):
+    """
+    Apply moving average to a matrix Q of shape (N, nq),
+    filtering each joint dimension independently.
+    """
+    Q = np.asarray(Q, dtype=float)
+    N, nq = Q.shape
+    out = np.zeros_like(Q)
+    for j in range(nq):
+        out[:, j] = moving_average_1d(Q[:, j], w)
+    return out
+
+
+def filter_path(path, urdf, window_size=5):
+    """
+    Smooth the Cartesian, orientation, and JOINT trajectories
+    inside a list of Node objects.
+
+    Parameters
+    ----------
+    path : list of Node
+        Each node must contain: X0, Y0, Z0, phi_0, theta, jointsPose.
+    window_size : int
+        Odd size of moving-average window (5, 7, ...).
+    urdf : urdf file
+        robot urdf
+    Returns
+    -------
+    path_filt : list of Node
+        New filtered path (deep copy).
+    """
+
+    # ---------- Extract arrays from nodes ----------
+    X = np.array([n.X0 for n in path])
+    Y = np.array([n.Y0 for n in path])
+    Z = np.array([n.Z0 for n in path])
+    phi = np.array([n.phi_0 for n in path])
+    theta = np.array([n.theta for n in path])
+
+    # Joint matrix (N x nq)
+    Q = np.array([np.asarray(n.jointsPose, dtype=float) for n in path])
+
+    # ---------- Filter Cartesian ----------
+    Xf = moving_average_1d(X, window_size)
+    Yf = moving_average_1d(Y, window_size)
+    Zf = moving_average_1d(Z, window_size)
+    phi_f = moving_average_1d(phi, window_size)
+    theta_f = moving_average_1d(theta, window_size)
+
+    # ---------- Filter joint trajectory ----------
+    Qf = moving_average_matrix(Q, window_size)
+
+    # ---------- Build new filtered path ----------
+    path_filt = []
+    for i, node in enumerate(path):
+        new_node = copy.deepcopy(node)
+        new_node.X0 = Xf[i]
+        new_node.Y0 = Yf[i]
+        new_node.Z0 = Zf[i]
+        new_node.phi_0 = phi_f[i]
+        new_node.theta = theta_f[i]
+        new_node.jointsPose = None
+        new_node.father = []
+        check_IK, q = IKFromURDF(urdf, new_node,  Qf[i])
+        if check_IK:
+            new_node.jointsPose = q
+            path_filt.append(new_node)
+        else:
+            path_filt = False
+    return path_filt
