@@ -113,7 +113,7 @@ class DisplacementCalculator:
         if not path_2:
             print("Path for sub-problem 2 not found")
             return []
-        print("Sub-problem 2 completed, planning sub-problem 2...")
+        print("Sub-problem 2 completed, planning sub-problem 3...")
 
         path_3 = dis.placement(path_2[-1], target_3, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, path_2[-1].jointsPose, 3)
 
@@ -121,9 +121,24 @@ class DisplacementCalculator:
             print("Path for sub-problem 3 not found")
             return []
         print("Sub-problem 3 completed...")
+        
+        ### smoothness trajectory ###
+        # path_filt = hf.filter_path(path, urdf, window_size=10)
+        path_1 = hf.get_smooth_path_displacement_nodes(path_1, skip=5, t=np.linspace(0, 1, 10),
+                                                            L=self.object_length, direction=direction, urdf=self.urdf_path,
+                                                            q_start=path_1[0].jointsPose)
+        path_2 = hf.get_smooth_path_displacement_nodes(path_2, skip=5, t=np.linspace(0, 1, 10),
+                                                            L=self.object_length, direction=direction, urdf=self.urdf_path,
+                                                            q_start=path_1[-1].jointsPose)
+        path_3 = hf.get_smooth_path_displacement_nodes(path_3, skip=5, t=np.linspace(0, 1, 10),
+                                                            L=self.object_length, direction=direction, urdf=self.urdf_path,
+                                                            q_start=path_2[-1].jointsPose)
 
         return {
             "path": path_1 + path_2 + path_3,
+            "path_1": path_1,
+            "path_2": path_2,
+            "path_3": path_3,
             "combined_joint_trajectory": hf.path_to_robot_joint_pose(path_1 + path_2 + path_3),
             "planning_time": time.time() - t_start
             }
@@ -208,8 +223,6 @@ class DisplacementCalculator:
         robot_joint_pose = hf.path_to_robot_joint_pose(path)
         x, y, z = hf.get_path_shapes(path, self.object_length, direction)
         vis.animate_robot_and_cable_meshcat(self.urdf_path, robot_joint_pose, x, y, z, dt=0.03)
-        if show_plot:
-            vis.plot_graph(path, direction)
 
 
 def main_calculation(
@@ -295,6 +308,8 @@ def main():
 
         # Visualize result
         calculator.visualize_trajectory(result["path"], show_plot=True, direction=args.direction)
+        vis.plot_graphs(result["path_1"], result["path_2"], result["path_3"], args.direction)
+    
     else:
         print("Planning failed")
 

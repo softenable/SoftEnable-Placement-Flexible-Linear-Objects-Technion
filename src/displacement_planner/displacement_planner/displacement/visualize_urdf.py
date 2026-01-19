@@ -215,8 +215,9 @@ def animate_robot_and_cable_meshcat(urdf_path, robot_joint_pose, x, y, z, dt=0.0
     print("Animation finished.")
 
 
-def plot_graph(path, direction):
-    L = path[0].L
+def plot_graphs(path_1, path_2, path_3, direction):
+    path = path_1 + path_2 + path_3
+    L = path_1[1].L
     if direction == "right":
         a = 1
     elif direction == "left":
@@ -234,7 +235,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('2')
-        plt.plot(index, n.phi_L * 180 / np.pi, 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.phi_L * 180 / np.pi, 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.phi_L * 180 / np.pi, 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.phi_L * 180 / np.pi, 'bo')
         plt.grid()
         plt.title("phi_L")
         index = index + 1
@@ -242,7 +248,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('3')
-        plt.plot(index, n.jointsPose[0], 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.jointsPose[0], 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.jointsPose[0], 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.jointsPose[0], 'bo')
         plt.grid()
         plt.title("joint 1")
         index = index + 1
@@ -250,7 +261,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('2')
-        plt.plot(index, n.jointsPose[1], 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.jointsPose[1], 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.jointsPose[1], 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.jointsPose[1], 'bo')
         plt.grid()
         plt.title("joint 2")
         index = index + 1
@@ -258,7 +274,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('4')
-        plt.plot(index, n.jointsPose[2], 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.jointsPose[2], 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.jointsPose[2], 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.jointsPose[2], 'bo')
         plt.grid()
         plt.title("joint 3")
         index = index + 1
@@ -266,7 +287,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('5')
-        plt.plot(index, n.jointsPose[3], 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.jointsPose[3], 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.jointsPose[3], 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.jointsPose[3], 'bo')
         plt.grid()
         plt.title("joint 4")
         index = index + 1
@@ -274,7 +300,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('6')
-        plt.plot(index, n.jointsPose[4], 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.jointsPose[4], 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.jointsPose[4], 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.jointsPose[4], 'bo')
         plt.grid()
         plt.title("joint 5")
         index = index + 1
@@ -282,7 +313,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('7')
-        plt.plot(index, n.jointsPose[5], 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.jointsPose[5], 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.jointsPose[5], 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.jointsPose[5], 'bo')
         plt.grid()
         plt.title("joint 6")
         index = index + 1
@@ -290,7 +326,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('8')
-        plt.plot(index, n.jointsPose[6], 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.jointsPose[6], 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.jointsPose[6], 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.jointsPose[6], 'bo')
         plt.grid()
         plt.title("joint 7")
         index = index + 1
@@ -298,7 +339,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('8')
-        plt.plot(index, n.XL, 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.XL, 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.XL, 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.XL, 'bo')
         plt.grid()
         plt.title(" XL")
         index = index + 1
@@ -306,7 +352,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('8')
-        plt.plot(index, n.YL, 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.YL, 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.YL, 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.YL, 'bo')
         plt.grid()
         plt.title("YL")
         index = index + 1
@@ -314,7 +365,12 @@ def plot_graph(path, direction):
     index = 0
     for n in path:
         plt.figure('8')
-        plt.plot(index, n.ZL, 'ro')
+        if index < len(path_1):
+            plt.plot(index, n.ZL, 'ro')
+        elif index >= len(path_1) and index < len(path_2):
+            plt.plot(index, n.ZL, 'go')
+        elif index >= len(path_3):
+            plt.plot(index, n.ZL, 'bo')
         plt.grid()
         plt.title("ZL")
         index = index + 1

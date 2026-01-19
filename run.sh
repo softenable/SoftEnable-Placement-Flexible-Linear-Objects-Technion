@@ -8,6 +8,7 @@ DOCKER_VOLUMES="
 --volume="${XAUTHORITY:-$HOME/.Xauthority}:/root/.Xauthority" \
 --volume=./configs:/ws/configs/ \
 --volume=./src:/ws/src/ \
+--volume=./code:/ws/code/ \
 "
 
 DOCKER_ENV_VARS="
