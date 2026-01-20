@@ -34,8 +34,8 @@ class DisplacementPlannerClient(Node):  # type: ignore
         object_length: float = 0.25,
         distance_from_tip: float = 0.05,
         roll_direction: str = "left",
-        start_pos: List[float] = [0.4, 0.2, 0.3],
-        target_pos: List[float] = [0.5, 0.2, 0.1],
+        start_pos: List[float] = [0.8, 0.4, 0.09],
+        target_pos: List[float] = [0.6, 0.4, 0.0],
     ) -> GetObjectPlacementTrajectory.Request:
         """Create a test service request with the new message format."""
         request = GetObjectPlacementTrajectory.Request()
@@ -59,7 +59,7 @@ class DisplacementPlannerClient(Node):  # type: ignore
         request.start_state = JointState()
         request.start_state.name = ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6", "joint7"]
         # Use a reasonable starting configuration
-        request.start_state.position = [0.0, -0.5, 0.0, -1.5, 0.0, 1.0, 0.0]
+        request.start_state.position = [-0.428, 0.256, -2.425, 1.725, -1.696, 1.213, 1.159]
 
         return request
 

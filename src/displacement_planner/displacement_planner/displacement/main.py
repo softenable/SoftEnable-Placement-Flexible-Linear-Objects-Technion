@@ -21,7 +21,7 @@ import displacement_planner.displacement.node_class as node_class
 # Import local modules with correct path
 import displacement_planner.displacement.utils as hf
 import displacement_planner.displacement.visualize_urdf as vis
-
+from displacement_planner.displacement.logger import Logger
 
 class DisplacementCalculator:
     """
@@ -38,6 +38,8 @@ class DisplacementCalculator:
         table_height: float = 0.0,
         friction_coefficient: float = 0.1,
         alpha: float = 0.6,
+        logger: Optional[Any] = None,
+        tip_link: str = "dlr_gripper_center",
     ):
         """
         Initialise the displacement calculator.
@@ -48,12 +50,16 @@ class DisplacementCalculator:
             table_height: Height of the table surface
             friction_coefficient: Friction coefficient for planning
             alpha: Planning algorithm parameter
+            tip_link: Name of the robot tip link for kinematics 
+            logger: Logger instance for logging messages
         """
         self.urdf_path = urdf_path
         self.object_length = object_length
         self.table_height = table_height
         self.mu_fric = friction_coefficient
         self.alpha = alpha
+        self.logger = logger
+        self.tip_link = tip_link
 
         # Load robot model
         try:
@@ -61,13 +67,30 @@ class DisplacementCalculator:
             self.data = self.model.createData()
         except Exception as e:
             raise RuntimeError(f"Failed to load robot model from {urdf_path}: {e}")
+        
+        self.logger.info(f"Loaded robot model from {urdf_path} with {self.model.nq} DOF")
+        if self.model.existFrame(self.tip_link):
+            self.tip_frame_id = self.model.getFrameId(self.tip_link)
+            self.logger.info(f"Using tip link '{self.tip_link}' with frame ID {self.tip_frame_id}")
+        else:
+            # If tip link not found, use end-effector
+            self.tip_frame_id = self.model.nframes - 1
+            self.logger.warn(f"Tip link '{self.tip_link}' not found, using frame ID {self.tip_frame_id}")
 
+
+    def get_end_effector_pose(self, q: np.ndarray) -> pin.SE3:
+        """Get end-effector pose for given joint configuration."""
+        pin.forwardKinematics(self.model, self.data, q)
+        pin.updateFramePlacements(self.model, self.data)
+        return self.data.oMf[self.tip_frame_id]
+    
     def plan_displacement(
         self,
         start_pose: List[float],
         target_pose: List[float],
         q_start: Optional[np.ndarray] = None,
         direction: str = "left",
+        object_length: Optional[float] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Plan displacement trajectory for flexible object.
@@ -77,6 +100,7 @@ class DisplacementCalculator:
             target_pose: [x, y, z] target position of object
             q_start: Initial joint configuration (uses neutral if None)
             direction: Rolling direction ("right" or "left")
+            object_length: Length of the flexible object (defaults to class attribute)
 
         Returns:
             Dictionary containing trajectory data or None if planning failed
@@ -85,6 +109,9 @@ class DisplacementCalculator:
         # Validate direction
         if direction not in ["right", "left"]:
             raise ValueError(f"Invalid direction '{direction}'. Use 'right' or 'left'")
+        
+        if object_length is not None:
+            self.object_length = object_length
 
         # Direction-dependent constants
         if direction == "right":
@@ -93,37 +120,57 @@ class DisplacementCalculator:
         else:  # left
             C = 3 / 4
             phi_0_T2 = np.pi
+            
+        self.logger.info(f"Planning displacement: start {start_pose}, target {target_pose}, direction {direction}, object length {self.object_length:.3f}m, friction {self.mu_fric:.2f}, table height {self.table_height:.3f}m, alpha {self.alpha:.2f}, C {C:.2f}, phi_0_T2 {phi_0_T2:.2f}rad, q_start {'provided' if q_start is not None else 'neutral'}")
 
         # Create target nodes for the three sub-problems
+        self.logger.info("Creating target nodes for displacement sub-problems...")
         start_1, target_1, target_2, target_3 = self._create_targets(start_pose, target_pose, direction, C, phi_0_T2)
         t_start = time.time()
         if q_start is None:
+            self.logger.info("Finding feasible starting joint configuration...")
             q_start = hf.find_feasible_q_start(self.urdf_path, start_1, target_1, target_2, target_3)
             # q_start = pin.neutral(self.model)
 
+        self.logger.info("Planning sub-problem 1...")
         path_1 = dis.placement(start_1, target_1, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, q_start, 1)
 
         if not path_1:
-            print("Path for sub-problem 1 not found")
+            self.logger.error("Path for sub-problem 1 not found")
             return []
-        print("Sub-problem 1 completed, planning sub-problem 2...")
+        self.logger.info("Sub-problem 1 completed, planning sub-problem 2...")
 
         path_2 = dis.placement(path_1[-1], target_2, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, path_1[-1].jointsPose, 2)
 
         if not path_2:
-            print("Path for sub-problem 2 not found")
+            self.logger.error("Path for sub-problem 2 not found")
             return []
-        print("Sub-problem 2 completed, planning sub-problem 2...")
+        self.logger.info("Sub-problem 2 completed, planning sub-problem 3...")
 
         path_3 = dis.placement(path_2[-1], target_3, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, path_2[-1].jointsPose, 3)
 
         if not path_3:
-            print("Path for sub-problem 3 not found")
+            self.logger.error("Path for sub-problem 3 not found")
             return []
-        print("Sub-problem 3 completed...")
+        self.logger.info("Sub-problem 3 completed...")
+        
+        ### smoothness trajectory ###
+        # path_filt = hf.filter_path(path, urdf, window_size=10)
+        path_1 = hf.get_smooth_path_displacement_nodes(path_1, skip=5, t=np.linspace(0, 1, 10),
+                                                            L=self.object_length, direction=direction, urdf=self.urdf_path,
+                                                            q_start=path_1[0].jointsPose)
+        path_2 = hf.get_smooth_path_displacement_nodes(path_2, skip=5, t=np.linspace(0, 1, 10),
+                                                            L=self.object_length, direction=direction, urdf=self.urdf_path,
+                                                            q_start=path_1[-1].jointsPose)
+        path_3 = hf.get_smooth_path_displacement_nodes(path_3, skip=5, t=np.linspace(0, 1, 10),
+                                                            L=self.object_length, direction=direction, urdf=self.urdf_path,
+                                                            q_start=path_2[-1].jointsPose)
 
         return {
             "path": path_1 + path_2 + path_3,
+            "path_1": path_1,
+            "path_2": path_2,
+            "path_3": path_3,
             "combined_joint_trajectory": hf.path_to_robot_joint_pose(path_1 + path_2 + path_3),
             "planning_time": time.time() - t_start
             }
@@ -208,8 +255,6 @@ class DisplacementCalculator:
         robot_joint_pose = hf.path_to_robot_joint_pose(path)
         x, y, z = hf.get_path_shapes(path, self.object_length, direction)
         vis.animate_robot_and_cable_meshcat(self.urdf_path, robot_joint_pose, x, y, z, dt=0.03)
-        if show_plot:
-            vis.plot_graph(path, direction)
 
 
 def main_calculation(
@@ -278,16 +323,21 @@ def main():
     print(f"Robot URDF: {urdf_path}")
 
     # Example parameters
+    logger = Logger()
 
-    calculator = DisplacementCalculator(urdf_path)
+    calculator = DisplacementCalculator(urdf_path, logger=logger)
 
     # start_pose = [0.8, 0.4, 0.3]
     # target_pose = [0.6, 0.4, ]
     start_pose = [0.8, 0.4, calculator.table_height + 0.3 * calculator.object_length]
     target_pose = [0.6, 0.4, calculator.table_height]
+    
+    # You can remove the q_stat and it will find a valid start itself
+    # q_start = None
+    q_start = np.array([-0.428, 0.256, -2.425, 1.725, -1.696, 1.213, 1.159, 0.0, 0.0, 0.0, 0.0])
 
     print(f"Planning displacement from {start_pose} to {target_pose}")
-    result = calculator.plan_displacement(start_pose=start_pose, target_pose=target_pose, direction=args.direction)
+    result = calculator.plan_displacement(start_pose=start_pose, target_pose=target_pose, q_start=q_start, direction=args.direction)
 
     if result:
         print(f"Planning successful in {result['planning_time']:.2f} seconds")
@@ -295,6 +345,8 @@ def main():
 
         # Visualize result
         calculator.visualize_trajectory(result["path"], show_plot=True, direction=args.direction)
+        vis.plot_graphs(result["path_1"], result["path_2"], result["path_3"], args.direction)
+    
     else:
         print("Planning failed")
 
