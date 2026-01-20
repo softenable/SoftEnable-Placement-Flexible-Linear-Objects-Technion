@@ -23,8 +23,8 @@ from visualization_msgs.msg import Marker
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from displacement_planner.displacement import displacement as dis
 # from displacement_planner.displacement.node_class import Node, Target, JointNode
+from displacement_planner.displacement import displacement as dis
 from displacement_planner.displacement import utils as hf
 from displacement_planner.displacement.main import DisplacementCalculator
 
@@ -50,7 +50,7 @@ class DisplacementPlanner(Node):  # type: ignore
 
         # Get parameters
         self._load_parameters()
-        
+
         self.displacement_calculator = DisplacementCalculator(
             urdf_path=self.urdf_path,
             object_length=self.object_length,
@@ -58,9 +58,9 @@ class DisplacementPlanner(Node):  # type: ignore
             friction_coefficient=np.min([self.mu_1, self.mu_2]),
             alpha=self.alpha,
             tip_link=self.tip_link,
-            logger = self.get_logger(),
+            logger=self.get_logger(),
         )
-        
+
         # Setup visualization
         self.marker_pub = self.create_publisher(Marker, "visualization/trajectory_marker", 10)
 
@@ -119,12 +119,13 @@ class DisplacementPlanner(Node):  # type: ignore
                     ParameterDescriptor(
                         type=ParameterType.PARAMETER_STRING, description="Name of the robot tip link for kinematics."
                     ),
-                ),             
+                ),
                 (
                     "dt",
                     0.1,
                     ParameterDescriptor(
-                        type=ParameterType.PARAMETER_DOUBLE, description="Time step between trajectory points in seconds."
+                        type=ParameterType.PARAMETER_DOUBLE,
+                        description="Time step between trajectory points in seconds.",
                     ),
                 ),
             ],
@@ -189,7 +190,7 @@ class DisplacementPlanner(Node):  # type: ignore
         self.get_logger().info(f"  Alpha: {self.alpha}")
         self.get_logger().info(f"  Tip link: {self.tip_link}")
         self.get_logger().info(f"  Time step (dt): {self.dt}")
- 
+
     def _extract_request_data(
         self, request: GetObjectPlacementTrajectory.Request
     ) -> Tuple[np.ndarray, List[float], List[float], str, float, float]:
@@ -203,7 +204,12 @@ class DisplacementPlanner(Node):  # type: ignore
                 self.get_logger().info(
                     f"Padding joint configuration from {len(q_start)} to {self.displacement_calculator.model.nq} DOF (adding zeros for gripper joints)"
                 )
-                q_start = np.pad(q_start, (0, self.displacement_calculator.model.nq - len(q_start)), mode="constant", constant_values=0.0)
+                q_start = np.pad(
+                    q_start,
+                    (0, self.displacement_calculator.model.nq - len(q_start)),
+                    mode="constant",
+                    constant_values=0.0,
+                )
             elif len(q_start) > self.displacement_calculator.model.nq:
                 self.get_logger().warn(
                     f"Joint configuration has {len(q_start)} DOF but model has {self.displacement_calculator.model.nq}, truncating"
@@ -300,14 +306,14 @@ class DisplacementPlanner(Node):  # type: ignore
 
         dt = 0.1  # 100ms between points
         for i, joint_config in enumerate(path):
-                    point = JointTrajectoryPoint()
-                    # Convert numpy array to list of floats for ROS2 message
-                    point.positions = [float(x) for x in joint_config]
-                    point.time_from_start = Duration(seconds=i * dt).to_msg()
-                    traj_msg.points.append(point)
+            point = JointTrajectoryPoint()
+            # Convert numpy array to list of floats for ROS2 message
+            point.positions = [float(x) for x in joint_config]
+            point.time_from_start = Duration(seconds=i * dt).to_msg()
+            traj_msg.points.append(point)
 
         return traj_msg
-    
+
     def publish_cartesian_trajectory_marker(self, cartesian_trajectory: MultiDOFJointTrajectory) -> None:
         """
         Publish trajectory visualization markers for RViz.
@@ -333,7 +339,7 @@ class DisplacementPlanner(Node):  # type: ignore
         marker.color.r = 1.0
         marker.color.g = 0.0
         marker.color.b = 0.0
-        
+
         for point in cartesian_trajectory.points:
             pt = Point()
             pt.x = point.transforms[0].translation.x
@@ -342,10 +348,8 @@ class DisplacementPlanner(Node):  # type: ignore
             marker.points.append(pt)
 
         self.marker_pub.publish(marker)
-        self.get_logger().info(
-            f"Published trajectory visualization with {len(marker.points)} points"
-        )
-    
+        self.get_logger().info(f"Published trajectory visualization with {len(marker.points)} points")
+
     def plan_trajectory(self, request: Any, response: Any) -> Any:
         """
         Main service callback for planning displacement trajectory.
@@ -366,35 +370,52 @@ class DisplacementPlanner(Node):  # type: ignore
             q_start, start_pos, target_pos, direction, object_length, distance_from_tip = self._extract_request_data(
                 request
             )
-            
+
             self.get_logger().info(f"Starting displacement planning...")
             result = self.displacement_calculator.plan_displacement(
-                start_pose = start_pos,
-                target_pose = target_pos,
-                # q_start = q_start, # TODO uncomment
-                direction = direction,
-                object_length = object_length
-            )      
-          
-            if not result:               
+                start_pose=start_pos,
+                target_pose=target_pos,
+                # q_start = q_start, # TODO
+                direction=direction,
+                object_length=object_length,
+            )
+
+            if not result:
                 self.get_logger().error("Displacement planning failed - no valid path found")
                 # Return empty trajectories on failure
                 response.joint_trajectory = self.create_trajectory_msg([])
                 response.cartesian_trajectory.header.stamp = self.get_clock().now().to_msg()
                 response.cartesian_trajectory.header.frame_id = "world"
                 return response
-            
-            self.get_logger().info(f"Planning successful in {result['planning_time']:.2f} seconds with {len(result['path'])} points")
+
+            self.get_logger().info(
+                f"Planning successful in {result['planning_time']:.2f} seconds with {len(result['path'])} points"
+            )
             self.get_logger().info(f"Generated {len(result['combined_joint_trajectory'])} trajectory points")
-            
+
             # Populate joint trajectory response
             response.joint_trajectory = self.create_trajectory_msg(result["combined_joint_trajectory"])
 
             # Generate cartesian trajectory (end-effector poses)
-            response.cartesian_trajectory = self._generate_cartesian_trajectory(result["combined_joint_trajectory"], self.dt)
+            response.cartesian_trajectory = self._generate_cartesian_trajectory(
+                result["combined_joint_trajectory"], self.dt
+            )
 
             # Publish visualization markers
             self.publish_cartesian_trajectory_marker(response.cartesian_trajectory)
+
+            # Create a new joint space response with only 7 joint positions in each point
+            new_response = GetObjectPlacementTrajectory.Response()
+            new_response.joint_trajectory = JointTrajectory()
+            new_response.joint_trajectory.joint_names = response.joint_trajectory.joint_names
+            new_response.joint_trajectory.header = response.joint_trajectory.header
+            for point in response.joint_trajectory.points:
+                new_point = JointTrajectoryPoint()
+                new_point.positions = point.positions[:7]  # Keep only first 7 joints
+                new_point.time_from_start = point.time_from_start
+                new_response.joint_trajectory.points.append(new_point)
+            new_response.cartesian_trajectory = response.cartesian_trajectory
+            response = new_response
 
             planning_time = time.time() - start_time
             self.get_logger().info(f"Planning completed successfully in {planning_time:.2f} seconds")
@@ -408,6 +429,7 @@ class DisplacementPlanner(Node):  # type: ignore
             response.cartesian_trajectory.header.frame_id = "world"
 
         return response
+
 
 def main(args: Any = None) -> None:
     rclpy.init(args=args)
