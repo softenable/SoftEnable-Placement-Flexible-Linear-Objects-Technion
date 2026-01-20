@@ -27,6 +27,7 @@ setup(
     entry_points={
         "console_scripts": [
             "planner = displacement_planner.planner:main",
+            "legacy_planner = displacement_planner.legacy_planner:main",
             "example_client = displacement_planner.example_client:main",
             "displacement_calculator = displacement_planner.displacement.main:main",
         ],
