@@ -384,7 +384,7 @@ class DisplacementPlanner(Node):  # type: ignore
                 response.cartesian_trajectory.header.frame_id = "world"
                 return response
             
-            self.get_logger().info(f"Planning successful in {result['planning_time']:.2f} seconds with {len(result['path'])} sub-paths")
+            self.get_logger().info(f"Planning successful in {result['planning_time']:.2f} seconds with {len(result['path'])} points")
             self.get_logger().info(f"Generated {len(result['combined_joint_trajectory'])} trajectory points")
             
             # Populate joint trajectory response
