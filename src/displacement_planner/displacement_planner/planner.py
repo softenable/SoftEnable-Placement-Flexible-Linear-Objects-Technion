@@ -375,7 +375,7 @@ class DisplacementPlanner(Node):  # type: ignore
             result = self.displacement_calculator.plan_displacement(
                 start_pose=start_pos,
                 target_pose=target_pos,
-                # q_start = q_start, # TODO
+                q_start=q_start,
                 direction=direction,
                 object_length=object_length,
             )

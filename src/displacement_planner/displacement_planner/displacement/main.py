@@ -331,9 +331,13 @@ def main():
     # target_pose = [0.6, 0.4, ]
     start_pose = [0.8, 0.4, calculator.table_height + 0.3 * calculator.object_length]
     target_pose = [0.6, 0.4, calculator.table_height]
+    
+    # You can remove the q_stat and it will find a valid start itself
+    # q_start = None
+    q_start = np.array([-0.428, 0.256, -2.425, 1.725, -1.696, 1.213, 1.159, 0.0, 0.0, 0.0, 0.0])
 
     print(f"Planning displacement from {start_pose} to {target_pose}")
-    result = calculator.plan_displacement(start_pose=start_pose, target_pose=target_pose, direction=args.direction)
+    result = calculator.plan_displacement(start_pose=start_pose, target_pose=target_pose, q_start=q_start, direction=args.direction)
 
     if result:
         print(f"Planning successful in {result['planning_time']:.2f} seconds")
