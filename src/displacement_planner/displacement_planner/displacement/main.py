@@ -21,7 +21,7 @@ import displacement_planner.displacement.node_class as node_class
 # Import local modules with correct path
 import displacement_planner.displacement.utils as hf
 import displacement_planner.displacement.visualize_urdf as vis
-
+from displacement_planner.displacement.logger import Logger
 
 class DisplacementCalculator:
     """
@@ -38,6 +38,8 @@ class DisplacementCalculator:
         table_height: float = 0.0,
         friction_coefficient: float = 0.1,
         alpha: float = 0.6,
+        logger: Optional[Any] = None,
+        tip_link: str = "dlr_gripper_center",
     ):
         """
         Initialise the displacement calculator.
@@ -48,12 +50,16 @@ class DisplacementCalculator:
             table_height: Height of the table surface
             friction_coefficient: Friction coefficient for planning
             alpha: Planning algorithm parameter
+            tip_link: Name of the robot tip link for kinematics 
+            logger: Logger instance for logging messages
         """
         self.urdf_path = urdf_path
         self.object_length = object_length
         self.table_height = table_height
         self.mu_fric = friction_coefficient
         self.alpha = alpha
+        self.logger = logger
+        self.tip_link = tip_link
 
         # Load robot model
         try:
@@ -61,13 +67,30 @@ class DisplacementCalculator:
             self.data = self.model.createData()
         except Exception as e:
             raise RuntimeError(f"Failed to load robot model from {urdf_path}: {e}")
+        
+        self.logger.info(f"Loaded robot model from {urdf_path} with {self.model.nq} DOF")
+        if self.model.existFrame(self.tip_link):
+            self.tip_frame_id = self.model.getFrameId(self.tip_link)
+            self.logger.info(f"Using tip link '{self.tip_link}' with frame ID {self.tip_frame_id}")
+        else:
+            # If tip link not found, use end-effector
+            self.tip_frame_id = self.model.nframes - 1
+            self.logger.warn(f"Tip link '{self.tip_link}' not found, using frame ID {self.tip_frame_id}")
 
+
+    def _get_end_effector_pose(self, q: np.ndarray) -> pin.SE3:
+        """Get end-effector pose for given joint configuration."""
+        pin.forwardKinematics(self.model, self.data, q)
+        pin.updateFramePlacements(self.model, self.data)
+        return self.data.oMf[self.tip_frame_id]
+    
     def plan_displacement(
         self,
         start_pose: List[float],
         target_pose: List[float],
         q_start: Optional[np.ndarray] = None,
         direction: str = "left",
+        object_length: Optional[float] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Plan displacement trajectory for flexible object.
@@ -77,6 +100,7 @@ class DisplacementCalculator:
             target_pose: [x, y, z] target position of object
             q_start: Initial joint configuration (uses neutral if None)
             direction: Rolling direction ("right" or "left")
+            object_length: Length of the flexible object (defaults to class attribute)
 
         Returns:
             Dictionary containing trajectory data or None if planning failed
@@ -85,6 +109,9 @@ class DisplacementCalculator:
         # Validate direction
         if direction not in ["right", "left"]:
             raise ValueError(f"Invalid direction '{direction}'. Use 'right' or 'left'")
+        
+        if object_length is not None:
+            self.object_length = object_length
 
         # Direction-dependent constants
         if direction == "right":
@@ -95,32 +122,35 @@ class DisplacementCalculator:
             phi_0_T2 = np.pi
 
         # Create target nodes for the three sub-problems
+        self.logger.info("Creating target nodes for displacement sub-problems...")
         start_1, target_1, target_2, target_3 = self._create_targets(start_pose, target_pose, direction, C, phi_0_T2)
         t_start = time.time()
         if q_start is None:
+            self.logger.info("Finding feasible starting joint configuration...")
             q_start = hf.find_feasible_q_start(self.urdf_path, start_1, target_1, target_2, target_3)
             # q_start = pin.neutral(self.model)
 
+        self.logger.info("Planning sub-problem 1...")
         path_1 = dis.placement(start_1, target_1, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, q_start, 1)
 
         if not path_1:
-            print("Path for sub-problem 1 not found")
+            self.logger.error("Path for sub-problem 1 not found")
             return []
-        print("Sub-problem 1 completed, planning sub-problem 2...")
+        self.logger.info("Sub-problem 1 completed, planning sub-problem 2...")
 
         path_2 = dis.placement(path_1[-1], target_2, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, path_1[-1].jointsPose, 2)
 
         if not path_2:
-            print("Path for sub-problem 2 not found")
+            self.logger.error("Path for sub-problem 2 not found")
             return []
-        print("Sub-problem 2 completed, planning sub-problem 3...")
+        self.logger.info("Sub-problem 2 completed, planning sub-problem 3...")
 
         path_3 = dis.placement(path_2[-1], target_3, self.object_length, self.mu_fric, direction, self.table_height, self.alpha, self.urdf_path, path_2[-1].jointsPose, 3)
 
         if not path_3:
-            print("Path for sub-problem 3 not found")
+            self.logger.error("Path for sub-problem 3 not found")
             return []
-        print("Sub-problem 3 completed...")
+        self.logger.info("Sub-problem 3 completed...")
         
         ### smoothness trajectory ###
         # path_filt = hf.filter_path(path, urdf, window_size=10)
@@ -282,7 +312,7 @@ def main():
         "--direction",
         type=str,
         help="Path to the robot URDF file",
-        default="left"
+        default="right"
     )
     args = parser.parse_args()
     urdf_path = args.urdf_path
@@ -291,8 +321,9 @@ def main():
     print(f"Robot URDF: {urdf_path}")
 
     # Example parameters
+    logger = Logger()
 
-    calculator = DisplacementCalculator(urdf_path)
+    calculator = DisplacementCalculator(urdf_path, logger=logger)
 
     # start_pose = [0.8, 0.4, 0.3]
     # target_pose = [0.6, 0.4, ]

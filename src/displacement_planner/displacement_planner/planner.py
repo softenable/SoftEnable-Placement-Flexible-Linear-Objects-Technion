@@ -24,8 +24,9 @@ from visualization_msgs.msg import Marker
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from displacement_planner.displacement import displacement as dis
-from displacement_planner.displacement import node_class
+# from displacement_planner.displacement.node_class import Node, Target, JointNode
 from displacement_planner.displacement import utils as hf
+from displacement_planner.displacement.main import DisplacementCalculator
 
 
 class DisplacementPlanner(Node):  # type: ignore
@@ -49,10 +50,17 @@ class DisplacementPlanner(Node):  # type: ignore
 
         # Get parameters
         self._load_parameters()
-
-        # Initialise robot model and kinematics
-        self._setup_robot_model()
-
+        
+        self.displacement_calculator = DisplacementCalculator(
+            urdf_path=self.urdf_path,
+            object_length=self.object_length,
+            table_height=self.table_height,
+            friction_coefficient=np.min([self.mu_1, self.mu_2]),
+            alpha=self.alpha,
+            tip_link=self.tip_link,
+            logger = self.get_logger(),
+        )
+        
         # Setup visualization
         self.marker_pub = self.create_publisher(Marker, "visualization/trajectory_marker", 10)
 
@@ -111,6 +119,13 @@ class DisplacementPlanner(Node):  # type: ignore
                     ParameterDescriptor(
                         type=ParameterType.PARAMETER_STRING, description="Name of the robot tip link for kinematics."
                     ),
+                ),             
+                (
+                    "dt",
+                    0.1,
+                    ParameterDescriptor(
+                        type=ParameterType.PARAMETER_DOUBLE, description="Time step between trajectory points in seconds."
+                    ),
                 ),
             ],
         )
@@ -161,6 +176,7 @@ class DisplacementPlanner(Node):  # type: ignore
         self.table_height = self.get_parameter("table_height").get_parameter_value().double_value
         self.alpha = self.get_parameter("alpha").get_parameter_value().double_value
         self.tip_link = self.get_parameter("tip_link").get_parameter_value().string_value
+        self.dt = self.get_parameter("dt").get_parameter_value().double_value
 
         # Derived parameters
         self.mu_fric = np.min([self.mu_1, self.mu_2])
@@ -171,37 +187,9 @@ class DisplacementPlanner(Node):  # type: ignore
         self.get_logger().info(f"  Friction coefficients: μ1={self.mu_1}, μ2={self.mu_2}")
         self.get_logger().info(f"  Table height: {self.table_height}")
         self.get_logger().info(f"  Alpha: {self.alpha}")
-
-    def _setup_robot_model(self) -> None:
-        """Initialise robot kinematic model using Pinocchio directly."""
-        try:
-            # Load robot model directly with Pinocchio
-            self.model = pin.buildModelFromUrdf(self.urdf_path)
-            self.data = self.model.createData()
-
-            # Find the tip link frame ID
-            if self.model.existFrame(self.tip_link):
-                self.tip_frame_id = self.model.getFrameId(self.tip_link)
-            else:
-                # If tip link not found, use end-effector
-                self.tip_frame_id = self.model.nframes - 1
-                self.get_logger().warn(f"Tip link '{self.tip_link}' not found, using frame ID {self.tip_frame_id}")
-
-            self.get_logger().info(f"Robot model loaded successfully:")
-            self.get_logger().info(f"  Model name: {self.model.name}")
-            self.get_logger().info(f"  DOF: {self.model.nq}")
-            self.get_logger().info(f"  Tip frame ID: {self.tip_frame_id}")
-
-        except Exception as e:
-            self.get_logger().error(f"Failed to initialise robot model: {str(e)}")
-            raise
-
-    def _get_end_effector_pose(self, q: np.ndarray) -> pin.SE3:
-        """Get end-effector pose for given joint configuration."""
-        pin.forwardKinematics(self.model, self.data, q)
-        pin.updateFramePlacements(self.model, self.data)
-        return self.data.oMf[self.tip_frame_id]
-
+        self.get_logger().info(f"  Tip link: {self.tip_link}")
+        self.get_logger().info(f"  Time step (dt): {self.dt}")
+ 
     def _extract_request_data(
         self, request: GetObjectPlacementTrajectory.Request
     ) -> Tuple[np.ndarray, List[float], List[float], str, float, float]:
@@ -211,16 +199,16 @@ class DisplacementPlanner(Node):  # type: ignore
             q_start = np.array(list(request.start_state.position))
 
             # Pad joint configuration if needed to match model DOF
-            if len(q_start) < self.model.nq:
+            if len(q_start) < self.displacement_calculator.model.nq:
                 self.get_logger().info(
-                    f"Padding joint configuration from {len(q_start)} to {self.model.nq} DOF (adding zeros for gripper joints)"
+                    f"Padding joint configuration from {len(q_start)} to {self.displacement_calculator.model.nq} DOF (adding zeros for gripper joints)"
                 )
-                q_start = np.pad(q_start, (0, self.model.nq - len(q_start)), mode="constant", constant_values=0.0)
-            elif len(q_start) > self.model.nq:
+                q_start = np.pad(q_start, (0, self.displacement_calculator.model.nq - len(q_start)), mode="constant", constant_values=0.0)
+            elif len(q_start) > self.displacement_calculator.model.nq:
                 self.get_logger().warn(
-                    f"Joint configuration has {len(q_start)} DOF but model has {self.model.nq}, truncating"
+                    f"Joint configuration has {len(q_start)} DOF but model has {self.displacement_calculator.model.nq}, truncating"
                 )
-                q_start = q_start[: self.model.nq]
+                q_start = q_start[: self.displacement_calculator.model.nq]
 
             # Extract object properties
             object_length = request.target_length
@@ -250,130 +238,6 @@ class DisplacementPlanner(Node):  # type: ignore
 
         except Exception as e:
             self.get_logger().error(f"Failed to extract request data: {str(e)}")
-            raise
-
-    def _create_displacement_targets(
-        self, start_pos: List[float], target_pos: List[float], direction: str, object_length: float
-    ) -> Tuple[node_class.Node, node_class.Target, node_class.Target, node_class.Target]:
-        """Create target nodes for the three displacement sub-problems."""
-        # Direction-dependent constants
-        if direction == "right":
-            C = 1 / 4
-            phi_0_T2 = 0
-        elif direction == "left":
-            C = 3 / 4
-            phi_0_T2 = np.pi
-        else:
-            raise ValueError(f"Invalid direction: {direction}")
-
-        # Sub-problem 1: Initial placement
-        X0_S1, Y0_S1, Z0_S1 = start_pos
-        Z0_S1 = max(Z0_S1, self.table_height + 0.3 * object_length)  # Ensure above table
-        theta_S1 = np.pi / 2
-
-        X0_T1, Y0_T1, Z0_T1 = target_pos
-        Z0_T1 = max(Z0_T1, self.table_height)  # Ensure on table
-        theta_T1 = 0
-
-        L_gal_S = 2 * object_length
-
-        target_1 = node_class.Target(
-            X0_T1, Y0_T1, Z0_T1, np.pi / 2, theta_T1, 1, C * L_gal_S, L_gal_S, 0, object_length, direction
-        )
-
-        start_1 = node_class.Node(
-            target_1,
-            X0_S1,
-            Y0_S1,
-            Z0_S1,
-            np.pi / 2,
-            theta_S1,
-            1,
-            C * L_gal_S,
-            L_gal_S,
-            0,
-            [],
-            self.alpha,
-            object_length,
-            direction,
-        )
-
-        # Sub-problem 2: Rolling phase
-        mu_T2 = 0
-        L_gal_T2 = 2 * object_length
-        target_2 = node_class.Target(
-            target_1.X0,
-            target_1.Y0,
-            target_1.Z0,
-            phi_0_T2,
-            target_1.theta,
-            mu_T2,
-            C * L_gal_T2,
-            L_gal_T2,
-            0,
-            object_length,
-            direction,
-        )
-
-        # Sub-problem 3: Final placement
-        mu_T3 = 0
-        l_T3 = 0.5 * object_length
-        L_gal_T3 = 4 * (object_length - l_T3)
-        target_3 = node_class.Target(
-            target_2.X0,
-            target_2.Y0,
-            target_2.Z0,
-            phi_0_T2,
-            target_2.theta,
-            mu_T3,
-            C * L_gal_T3,
-            L_gal_T3,
-            l_T3,
-            object_length,
-            direction,
-        )
-
-        return start_1, target_1, target_2, target_3
-
-    def _generate_trajectory(
-        self, path: List[List[node_class.Node]], direction: str, object_length: float
-    ) -> Tuple[List[List[float]], List[List[List[float]]]]:
-        """Generate smooth joint trajectory from displacement path."""
-        if not path or len(path) != 3:
-            raise ValueError("Invalid path structure - expected 3 sub-paths")
-
-        path_1, path_2, path_3 = path
-
-        # Trajectory generation parameters
-        skip = 8
-        num_t = 8
-        t = np.linspace(0, 1, num_t)
-
-        try:
-            # Generate smooth paths for each sub-problem
-            x1, y1, z1, phi_l_1, theta_1, l1, q1 = hf.get_smooth_path_displacement(
-                path_1, skip, t, object_length, direction, self.urdf_path, path_1[0].jointsPose
-            )
-            x2, y2, z2, phi_l_2, theta_2, l2, q2 = hf.get_smooth_path_displacement(
-                path_2, skip, t, object_length, direction, self.urdf_path, path_2[0].jointsPose
-            )
-            x3, y3, z3, phi_l_3, theta_3, l3, q3 = hf.get_smooth_path_displacement(
-                path_3, skip, t, object_length, direction, self.urdf_path, path_3[0].jointsPose
-            )
-
-            # Get gripper paths for visualization
-            P1, R1 = hf.get_gripper_path(x1[:, -1], y1[:, -1], z1[:, -1], phi_l_1, theta_1)
-            P2, R2 = hf.get_gripper_path(x2[:, -1], y2[:, -1], z2[:, -1], phi_l_2, theta_2)
-            P3, R3 = hf.get_gripper_path(x3[:, -1], y3[:, -1], z3[:, -1], phi_l_3, theta_3)
-
-            # Combine trajectories
-            gripper_paths = [P1.tolist(), P2.tolist(), P3.tolist()]
-            joint_trajectory = q1 + q2 + q3
-
-            return joint_trajectory, gripper_paths
-
-        except Exception as e:
-            self.get_logger().error(f"Failed to generate trajectory: {str(e)}")
             raise
 
     def _generate_cartesian_trajectory(self, joint_trajectory: List[List[float]], dt: float) -> MultiDOFJointTrajectory:
@@ -419,6 +283,68 @@ class DisplacementPlanner(Node):  # type: ignore
 
         return cartesian_traj
 
+    def create_trajectory_msg(self, path: Any) -> JointTrajectory:
+        """Convert joint trajectory list to JointTrajectory message."""
+        traj_msg = JointTrajectory()
+        traj_msg.joint_names = [
+            "joint1",
+            "joint2",
+            "joint3",
+            "joint4",
+            "joint5",
+            "joint6",
+            "joint7",
+        ]
+        traj_msg.header.stamp = self.get_clock().now().to_msg()
+        traj_msg.header.frame_id = "world"
+
+        dt = 0.1  # 100ms between points
+        for i, joint_config in enumerate(path):
+                    point = JointTrajectoryPoint()
+                    point.positions = joint_config
+                    point.time_from_start = Duration(seconds=i * dt).to_msg()
+                    traj_msg.points.append(point)
+
+        return traj_msg
+    
+    def publish_cartesian_trajectory_marker(self, cartesian_trajectory: MultiDOFJointTrajectory) -> None:
+        """
+        Publish trajectory visualization markers for RViz.
+
+        Args:
+            gripper_paths: List of gripper positions for each sub-trajectory
+        """
+
+        marker = Marker()
+        marker.header.frame_id = "world"
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.ns = "displacement_trajectory"
+        marker.id = 0
+        marker.type = Marker.SPHERE_LIST
+        marker.action = Marker.ADD
+        # Marker properties
+        marker.scale.x = 0.025
+        marker.scale.y = 0.025
+        marker.scale.z = 0.025
+
+        # Colour for this sub-trajectory
+        marker.color.a = 1.0
+        marker.color.r = 1.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
+        
+        for point in cartesian_trajectory.points:
+            pt = Point()
+            pt.x = point.transforms[0].translation.x
+            pt.y = point.transforms[0].translation.y
+            pt.z = point.transforms[0].translation.z
+            marker.points.append(pt)
+
+        self.marker_pub.publish(marker)
+        self.get_logger().info(
+            f"Published trajectory visualization with {len(marker.points)} points"
+        )
+    
     def plan_trajectory(self, request: Any, response: Any) -> Any:
         """
         Main service callback for planning displacement trajectory.
@@ -438,148 +364,46 @@ class DisplacementPlanner(Node):  # type: ignore
             q_start, start_pos, target_pos, direction, object_length, distance_from_tip = self._extract_request_data(
                 request
             )
-
-            # Create displacement targets for the three sub-problems
-            start_1, target_1, target_2, target_3 = self._create_displacement_targets(
-                start_pos, target_pos, direction, object_length
-            )
-
-            # Plan displacement path
-            self.get_logger().info("Starting displacement planning algorithm...")
-            path = dis.displacement(
-                start_1,
-                target_1,
-                target_2,
-                target_3,
-                object_length,
-                self.mu_fric,
-                direction,
-                self.table_height,
-                self.alpha,
-                self.urdf_path,
-                q_start,
-            )
-
-            if not path:
+            result = self.displacement_calculator.plan_displacement(
+                start_pose = start_pos,
+                target_pose = target_pos,
+                q_start = q_start,
+                direction = direction,
+                object_length = object_length
+            )      
+          
+            if not result:               
                 self.get_logger().error("Displacement planning failed - no valid path found")
                 # Return empty trajectories on failure
-                response.joint_trajectory.joint_names = [
-                    "joint1",
-                    "joint2",
-                    "joint3",
-                    "joint4",
-                    "joint5",
-                    "joint6",
-                    "joint7",
-                ]
-                response.joint_trajectory.header.stamp = self.get_clock().now().to_msg()
-                response.joint_trajectory.header.frame_id = "world"
+                response.joint_trajectory = self.create_trajectory_msg([])
                 response.cartesian_trajectory.header.stamp = self.get_clock().now().to_msg()
                 response.cartesian_trajectory.header.frame_id = "world"
                 return response
-
-            self.get_logger().info(f"Displacement planning completed with {len(path)} sub-paths")
-
-            # Generate smooth joint trajectory
-            joint_trajectory, gripper_paths = self._generate_trajectory(path, direction, object_length)
-
+            
+            self.get_logger().info(f"Planning successful in {result['planning_time']:.2f} seconds with {len(result['path'])} sub-paths")
+            self.get_logger().info(f"Generated {len(result['combined_joint_trajectory'])} trajectory points")
+            
             # Populate joint trajectory response
-            response.joint_trajectory.joint_names = [
-                "joint1",
-                "joint2",
-                "joint3",
-                "joint4",
-                "joint5",
-                "joint6",
-                "joint7",
-            ]
-            response.joint_trajectory.header.stamp = self.get_clock().now().to_msg()
-            response.joint_trajectory.header.frame_id = "world"
-
-            # Add trajectory points with timing
-            dt = 0.1  # 100ms between points
-            for i, joint_config in enumerate(joint_trajectory):
-                point = JointTrajectoryPoint()
-                point.positions = joint_config
-                point.time_from_start = Duration(seconds=i * dt).to_msg()
-                response.joint_trajectory.points.append(point)
+            response.joint_trajectory = self.create_trajectory_msg(result["path"], dt = self.dt)
 
             # Generate cartesian trajectory (end-effector poses)
-            response.cartesian_trajectory = self._generate_cartesian_trajectory(joint_trajectory, dt)
+            response.cartesian_trajectory = self._generate_cartesian_trajectory(response.joint_trajectory, self.dt)
 
             # Publish visualization markers
-            self.publish_trajectory_marker(gripper_paths)
+            self.publish_cartesian_trajectory_marker(response.cartesian_trajectory)
 
             planning_time = time.time() - start_time
             self.get_logger().info(f"Planning completed successfully in {planning_time:.2f} seconds")
-            self.get_logger().info(f"Generated trajectory with {len(joint_trajectory)} points")
+            self.get_logger().info(f"Generated trajectory with {len(response.joint_trajectory.points)} points")
 
         except Exception as e:
             self.get_logger().error(f"Planning failed with error: {str(e)}")
             # Return empty trajectories on error
-            response.joint_trajectory.joint_names = [
-                "joint1",
-                "joint2",
-                "joint3",
-                "joint4",
-                "joint5",
-                "joint6",
-                "joint7",
-            ]
-            response.joint_trajectory.header.stamp = self.get_clock().now().to_msg()
-            response.joint_trajectory.header.frame_id = "world"
+            response.joint_trajectory = self.create_trajectory_msg([])
             response.cartesian_trajectory.header.stamp = self.get_clock().now().to_msg()
             response.cartesian_trajectory.header.frame_id = "world"
 
         return response
-
-    def publish_trajectory_marker(self, gripper_paths: List[List[List[float]]]) -> None:
-        """
-        Publish trajectory visualization markers for RViz.
-
-        Args:
-            gripper_paths: List of gripper positions for each sub-trajectory
-        """
-        colours = [
-            (1.0, 0.0, 0.0),  # Red - Sub-problem 1
-            (0.0, 1.0, 0.0),  # Green - Sub-problem 2
-            (0.0, 0.0, 1.0),  # Blue - Sub-problem 3
-        ]
-
-        for idx, path_points in enumerate(gripper_paths):
-            marker = Marker()
-            marker.header.frame_id = "world"
-            marker.header.stamp = self.get_clock().now().to_msg()
-            marker.ns = "displacement_trajectory"
-            marker.id = idx
-            marker.type = Marker.SPHERE_LIST
-            marker.action = Marker.ADD
-
-            # Marker properties
-            marker.scale.x = 0.025
-            marker.scale.y = 0.025
-            marker.scale.z = 0.025
-
-            # Colour for this sub-trajectory
-            r, g, b = colours[idx % len(colours)]
-            marker.color.a = 1.0
-            marker.color.r = r
-            marker.color.g = g
-            marker.color.b = b
-
-            # Add points
-            for point_coords in path_points:
-                pt = Point()
-                pt.x = point_coords[0]
-                pt.y = point_coords[1]
-                pt.z = point_coords[2]
-                marker.points.append(pt)
-
-            self.marker_pub.publish(marker)
-            self.get_logger().info(
-                f"Published trajectory visualization for sub-problem {idx + 1} " f"with {len(marker.points)} points"
-            )
-
 
 def main(args: Any = None) -> None:
     rclpy.init(args=args)

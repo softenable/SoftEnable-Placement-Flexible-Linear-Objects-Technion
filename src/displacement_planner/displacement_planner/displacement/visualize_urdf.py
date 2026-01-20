@@ -5,7 +5,7 @@ import os
 import time
 import meshcat.geometry as g
 import matplotlib.pyplot as plt
-import utils as hf
+from . import utils as hf
 
 
 def plot_static_robot_config(q, X0, Y0, Z0):
