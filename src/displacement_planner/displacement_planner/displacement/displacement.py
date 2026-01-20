@@ -4,9 +4,11 @@ import numpy as np
 
 import displacement_planner.displacement.node_class as node_class
 import displacement_planner.displacement.utils as hf
+from typing import List
+from displacement_planner.displacement.node_class import Node, Target
 
 
-def placement(start, target, L, mu_fric, direction, h_table, alpha, urdf, q_start, mode):
+def placement(start : Node, target: Target, L: float, mu_fric: float, direction : str, h_table: float, alpha: float, urdf, q_start, mode : int):
     # define the LDO and environment parameters
     gamma = np.arctan(mu_fric)
 
@@ -35,7 +37,7 @@ def placement(start, target, L, mu_fric, direction, h_table, alpha, urdf, q_star
         phi_L_min=-180*np.pi/180,
         phi_L_max=180*np.pi/180
     )
-    Bound.urdf = urdf
+    Bound.urdf = urdf # TODO, is this needed?
     # get path for sub-problem 1
     if mode == 1:
         path_1 = A_star_displacement(start, target, Bound, mode, q_start)

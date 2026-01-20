@@ -4,7 +4,7 @@
 displacement_planner:
   ros__parameters:
     # Robot Configuration
-    urdf_file_path: "$(find displacement_planner)/config/softenable.urdf"
+    urdf_file_path: "/usr/share/iiwa-description/urdf/softenable.urdf"
     tip_link: "dlr_gripper_center"
 
     # Object Properties (defaults - can be overridden by service requests)

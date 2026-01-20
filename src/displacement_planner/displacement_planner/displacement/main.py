@@ -78,7 +78,7 @@ class DisplacementCalculator:
             self.logger.warn(f"Tip link '{self.tip_link}' not found, using frame ID {self.tip_frame_id}")
 
 
-    def _get_end_effector_pose(self, q: np.ndarray) -> pin.SE3:
+    def get_end_effector_pose(self, q: np.ndarray) -> pin.SE3:
         """Get end-effector pose for given joint configuration."""
         pin.forwardKinematics(self.model, self.data, q)
         pin.updateFramePlacements(self.model, self.data)
@@ -120,6 +120,8 @@ class DisplacementCalculator:
         else:  # left
             C = 3 / 4
             phi_0_T2 = np.pi
+            
+        self.logger.info(f"Planning displacement: start {start_pose}, target {target_pose}, direction {direction}, object length {self.object_length:.3f}m, friction {self.mu_fric:.2f}, table height {self.table_height:.3f}m, alpha {self.alpha:.2f}, C {C:.2f}, phi_0_T2 {phi_0_T2:.2f}rad, q_start {'provided' if q_start is not None else 'neutral'}")
 
         # Create target nodes for the three sub-problems
         self.logger.info("Creating target nodes for displacement sub-problems...")
@@ -312,7 +314,7 @@ def main():
         "--direction",
         type=str,
         help="Path to the robot URDF file",
-        default="right"
+        default="left"
     )
     args = parser.parse_args()
     urdf_path = args.urdf_path

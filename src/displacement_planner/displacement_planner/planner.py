@@ -73,7 +73,7 @@ class DisplacementPlanner(Node):  # type: ignore
             parameters=[
                 (
                     "urdf_file_path",
-                    "/usr/share/iiwa-description/urdf/iiwa14_with_ft_and_dlr_gripper.urdf",
+                    "/usr/share/iiwa-description/urdf/softenable.urdf",
                     ParameterDescriptor(
                         type=ParameterType.PARAMETER_STRING, description="The path to urdf file of the robot."
                     ),
@@ -251,7 +251,7 @@ class DisplacementPlanner(Node):  # type: ignore
         for i, q in enumerate(joint_trajectory):
             try:
                 # Get end-effector pose for this joint configuration
-                pose = self._get_end_effector_pose(np.array(q))
+                pose = self.displacement_calculator.get_end_effector_pose(np.array(q))
 
                 # Create trajectory point
                 point = MultiDOFJointTrajectoryPoint()
@@ -301,7 +301,8 @@ class DisplacementPlanner(Node):  # type: ignore
         dt = 0.1  # 100ms between points
         for i, joint_config in enumerate(path):
                     point = JointTrajectoryPoint()
-                    point.positions = joint_config
+                    # Convert numpy array to list of floats for ROS2 message
+                    point.positions = [float(x) for x in joint_config]
                     point.time_from_start = Duration(seconds=i * dt).to_msg()
                     traj_msg.points.append(point)
 
@@ -361,13 +362,16 @@ class DisplacementPlanner(Node):  # type: ignore
 
         try:
             # Extract and validate request data
+            self.get_logger().info("Extracting request data...")
             q_start, start_pos, target_pos, direction, object_length, distance_from_tip = self._extract_request_data(
                 request
             )
+            
+            self.get_logger().info(f"Starting displacement planning...")
             result = self.displacement_calculator.plan_displacement(
                 start_pose = start_pos,
                 target_pose = target_pos,
-                q_start = q_start,
+                # q_start = q_start, # TODO uncomment
                 direction = direction,
                 object_length = object_length
             )      
@@ -384,10 +388,10 @@ class DisplacementPlanner(Node):  # type: ignore
             self.get_logger().info(f"Generated {len(result['combined_joint_trajectory'])} trajectory points")
             
             # Populate joint trajectory response
-            response.joint_trajectory = self.create_trajectory_msg(result["path"], dt = self.dt)
+            response.joint_trajectory = self.create_trajectory_msg(result["combined_joint_trajectory"])
 
             # Generate cartesian trajectory (end-effector poses)
-            response.cartesian_trajectory = self._generate_cartesian_trajectory(response.joint_trajectory, self.dt)
+            response.cartesian_trajectory = self._generate_cartesian_trajectory(result["combined_joint_trajectory"], self.dt)
 
             # Publish visualization markers
             self.publish_cartesian_trajectory_marker(response.cartesian_trajectory)

@@ -34,8 +34,8 @@ class DisplacementPlannerClient(Node):  # type: ignore
         object_length: float = 0.25,
         distance_from_tip: float = 0.05,
         roll_direction: str = "left",
-        start_pos: List[float] = [0.4, 0.2, 0.3],
-        target_pos: List[float] = [0.5, 0.2, 0.1],
+        start_pos: List[float] = [0.8, 0.4, 0.09],
+        target_pos: List[float] = [0.6, 0.4, 0.0],
     ) -> GetObjectPlacementTrajectory.Request:
         """Create a test service request with the new message format."""
         request = GetObjectPlacementTrajectory.Request()
