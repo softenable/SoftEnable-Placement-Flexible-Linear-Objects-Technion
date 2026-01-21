@@ -57,8 +57,13 @@ L_gal_T3 = 3.5 * (L - l_T3)
 target_3 = node_class.Target(target_2.X0, target_2.Y0, target_2.Z0, phi_0_T2, target_2.theta, mu_T3, C * L_gal_T3,
                              L_gal_T3, l_T3, L, direction)
 # find feasible q_start
-q_start = hf.find_feasible_q_start(urdf, start_1, target_1, target_2, target_3)
-
+# q_start = hf.find_feasible_q_start(urdf, start_1, target_1, target_2, target_3)
+gamma = np.arctan(mu_fric)
+mu1 = np.cos(np.pi / 2 - gamma)
+mu2 = np.cos(np.pi / 2 + gamma)
+mu_min = np.min([mu1, mu2])
+mu_max = np.max([mu1, mu2])
+target_2, target_3, q_start = hf.find_feasible_q_and_targets(urdf, start_1, target_1, target_2, target_3, mu_min, mu_max, 1.86, 5.5, direction)
 if q_start is not None:
     # plot initial arm configuration
     # vis.plot_static_robot_config(q_start, start_1.XL, start_1.YL, start_1.ZL)
@@ -81,19 +86,20 @@ if q_start is not None:
                 ExecutionTime1_2_3 = t_end - t_start
                 print("Execution Time =", ExecutionTime1_2_3)
                 ### smoothness trajectory ###
-                # path_filt = hf.filter_path(path, urdf, window_size=10)
-                path_1 = hf.get_smooth_path_displacement_nodes(path_1, skip=5, t=np.linspace(0, 1, 10),
+                path_1 = hf.get_smooth_path_displacement_nodes(path_1, skip=6, t=np.linspace(0, 1, 10),
                                                                  L=L, direction=direction, urdf=urdf,
                                                                  q_start=path_1[0].jointsPose)
-                path_2 = hf.get_smooth_path_displacement_nodes(path_2, skip=5, t=np.linspace(0, 1, 10),
+                path_2 = hf.get_smooth_path_displacement_nodes(path_2, skip=6, t=np.linspace(0, 1, 10),
                                                                  L=L, direction=direction, urdf=urdf,
                                                                  q_start=path_1[-1].jointsPose)
-                path_3 = hf.get_smooth_path_displacement_nodes(path_3, skip=5, t=np.linspace(0, 1, 10),
+                path_3 = hf.get_smooth_path_displacement_nodes(path_3, skip=6, t=np.linspace(0, 1, 10),
                                                                  L=L, direction=direction, urdf=urdf,
                                                                  q_start=path_2[-1].jointsPose)
 
                 path = path_1 + path_2 + path_3
-
+                # add filter
+                # path = hf.filter_path(path, urdf, window_size=5)
+                # gripper path
                 P, R = hf.get_gripper_path(path)
                 robot_joint_pose = hf.path_to_robot_joint_pose(path)
                 x, y, z = hf.get_path_shapes(path, L, direction)
