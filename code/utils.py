@@ -286,15 +286,15 @@ def check_node_disp(node, Bound, mode, q_start):
             check_fric = np.pi / 2 + Bound.gamma >= node.phi_0 + np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
         elif Bound.displacment_diraction == 'left':
             check_fric = np.pi / 2 + Bound.gamma >= node.phi_0 - np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
-        check_phi_L = Bound.phi_L_min <= node.phi_L <= Bound.phi_L_max
-        check = check_phi and check_mu and check_L_gal and check_fric and check_phi_L
+        # check_phi_L = Bound.phi_L_min <= node.phi_L <= Bound.phi_L_max
+        check = check_phi and check_mu and check_L_gal and check_fric
     elif mode == 3:
         check_mu = Bound.max_mu >= node.mu >= Bound.min_mu
         check_L_gal = Bound.L_gal_max >= node.L_gal >= 1.86 * (Bound.L - node.l)  # stability criteria
         check_l = Bound.min_l <= node.l <= Bound.max_l
         check_fric = np.pi / 2 + Bound.gamma >= np.arccos(node.mu) >= np.pi / 2 - Bound.gamma
-        check_phi_L = Bound.phi_L_min <= node.phi_L <= Bound.phi_L_max
-        check = check_mu and check_L_gal and check_l and check_fric and check_phi_L
+        # check_phi_L = Bound.phi_L_min <= node.phi_L <= Bound.phi_L_max
+        check = check_mu and check_L_gal and check_l and check_fric
     else:
         print("somthing strainge!")
         check = 0
@@ -408,9 +408,6 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
     ls = np.array(ls)
 
     return xs, ys, zs, phi_l_s, theta_s, ls, q
-
-import numpy as np
-import node_class
 
 def get_smooth_path_displacement_nodes(path, skip, t, L, direction, urdf, q_start):
     """
@@ -531,7 +528,6 @@ def get_smooth_path_displacement_nodes(path, skip, t, L, direction, urdf, q_star
             path_smooth.append(node)
 
     return path_smooth
-
 
 def get_gripper_path(path):
 
@@ -656,7 +652,21 @@ def IKFromURDF(urdf: str, node, q_start):
         q = pin.integrate(model, q, v * DT)
 
     # -----------------------------------------------------------
-    # 5. Return result (with joint limit check if you want)
+    # 5. Check arm-table Collision
+    # -----------------------------------------------------------
+    # pin.updateFramePlacements(model, data)
+    TH = 0.1
+    table_pos = data.oMf[-1].translation
+    pose_joint_2 = data.oMf[5].translation
+    pose_joint_3 = data.oMf[7].translation
+    pose_joint_4 = data.oMf[9].translation
+    pose_joint_5 = data.oMf[11].translation
+    pose_joint_6 = data.oMf[13].translation
+    pose_joint_7 = data.oMf[15].translation
+    if table_pos[2] + TH > np.min([[pose_joint_2[2], pose_joint_3[2], pose_joint_4[2], pose_joint_5[2], pose_joint_6[2], pose_joint_7[2]]]):
+        success = False
+    # -----------------------------------------------------------
+    # 6. Return result (with joint limit check if you want)
     # -----------------------------------------------------------
     if success:
         # Example: check only first 7 (KUKA iiwa) are inside limits
@@ -668,13 +678,14 @@ def IKFromURDF(urdf: str, node, q_start):
     else:
         return False, None
 
-def find_feasible_q_start(urdf: str, start, target_1, target_2, target_3):
+def find_feasible_q_and_targets(urdf, start, target_1, target_2, target_3, mu_min, mu_max, L_gal_min, L_gal_max, direction):
     model = pin.buildModelFromUrdf(urdf)
     max_iter = 5000
     i = 0
     while True:
         if i >= max_iter:
-            return None
+            return target_2, target_3, None
+        i += 1
         check, qs = IKFromURDF(urdf, start, sample_random_q(model.lowerPositionLimit, model.upperPositionLimit))
         if check:
             check, q1 = IKFromURDF(urdf, target_1, qs)
@@ -683,9 +694,43 @@ def find_feasible_q_start(urdf: str, start, target_1, target_2, target_3):
                 if check:
                     check, q3 = IKFromURDF(urdf, target_3, q2)
                     if check:
-                        return qs
-        i += 1
+                        return target_2, target_3, qs
+                    else:
+                        check, new_target_3, q3 = find_feasible_target(target_3, mu_min, mu_max, L_gal_min,
+                                                                       L_gal_max, direction, q2, urdf)
+                        if check:
+                            return target_2, new_target_3, qs
+                else:
+                    check, new_target_2, q2 = find_feasible_target(target_2, mu_min, mu_max, L_gal_min, L_gal_max, direction, q1, urdf)
+                    if check:
+                        check, q3 = IKFromURDF(urdf, target_3, q2)
+                        if check:
+                            return new_target_2, target_3, qs
+                        else:
+                            check, new_target_3, q3 = find_feasible_target(target_3, mu_min, mu_max, L_gal_min,
+                                                                           L_gal_max, direction, q2, urdf)
+                            if check:
+                                return new_target_2, new_target_3, qs
 
+def find_feasible_target(target, mu_min, mu_max, L_gal_min, L_gal_max, direction, q_start, urdf):
+    max_iter = 1000
+    i = 0
+    if direction == "right":
+        C = 1 / 4
+    elif direction == "left":
+        C = 3 / 4
+    while True:
+        if i >= max_iter:
+            break
+        mu_rand = mu_min + (mu_max - mu_min) * np.random.rand()
+        L_gal_rand = (L_gal_min + (L_gal_max - L_gal_min) * np.random.rand()) * (target.L - target.l)
+        i += 1
+        new_target = node_class.Target(target.X0, target.Y0, target.Z0, target.phi_0, target.theta, mu_rand,
+                                       C * L_gal_rand, target.L_gal, target.l, target.L, direction)
+        check, q = IKFromURDF(urdf, new_target, q_start)
+        if check:
+            return check, new_target, q
+    return False, target, q_start
 def sample_random_q(joint_min, joint_max):
     joint_min = np.asarray(joint_min, dtype=float)
     joint_max = np.asarray(joint_max, dtype=float)
