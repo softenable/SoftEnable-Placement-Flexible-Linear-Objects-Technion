@@ -338,7 +338,6 @@ def main():
     q_start = np.deg2rad(np.array([-24.77, 43.10, 12.07, -91.07, 78.62, 92.48, 46.76, 0.0, 0.0, 0.0, 0.0]))
     
     print(f"Starting joint configuration (radians): {q_start}")
-    return
 
     print(f"Planning displacement from {start_pose} to {target_pose}")
     result = calculator.plan_displacement(start_pose=start_pose, target_pose=target_pose, q_start=q_start, direction=args.direction)
