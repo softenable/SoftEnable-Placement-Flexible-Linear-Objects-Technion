@@ -2,7 +2,7 @@ import time
 import numpy as np
 import utils as hf
 import node_class
-import placement as dis
+import displacement as dis
 import visualize_urdf as vis
 import os
 import matplotlib.pyplot as plt
@@ -19,7 +19,9 @@ if not urdf_files:
 urdf = os.path.join(current_dir, urdf_files[0])
 print(f"Loading URDF: {urdf}")
 
-direction = "left"
+tip_link = "right_placement_link"
+
+direction = "right"
 L = 0.3
 mu_fric = 0.1
 h_table = 0
@@ -52,7 +54,7 @@ target_2 = node_class.Target(target_1.X0, target_1.Y0, target_1.Z0, phi_0_T2, ta
 
 # define target for sub-problem 3
 mu_T3 = 0
-l_T3 = 0.5 * L
+l_T3 = 0.5 * L # How much of the item is on the tray. Trade off with gripper collision 
 L_gal_T3 = 3.5 * (L - l_T3)
 target_3 = node_class.Target(target_2.X0, target_2.Y0, target_2.Z0, phi_0_T2, target_2.theta, mu_T3, C * L_gal_T3,
                              L_gal_T3, l_T3, L, direction)
@@ -63,22 +65,22 @@ mu1 = np.cos(np.pi / 2 - gamma)
 mu2 = np.cos(np.pi / 2 + gamma)
 mu_min = np.min([mu1, mu2])
 mu_max = np.max([mu1, mu2])
-target_2, target_3, q_start = hf.find_feasible_q_and_targets(urdf, start_1, target_1, target_2, target_3, mu_min, mu_max, 1.86, 5.5, direction)
+target_2, target_3, q_start = hf.find_feasible_q_and_targets(urdf, start_1, target_1, target_2, target_3, mu_min, mu_max, 1.86, 5.5, direction, tip_link=tip_link)
 if q_start is not None:
     # plot initial arm configuration
     # vis.plot_static_robot_config(q_start, start_1.XL, start_1.YL, start_1.ZL)
     # get full path
     t_start = time.time()
 
-    path_1 = dis.placement(start_1, target_1, L, mu_fric, direction, h_table, alpha, urdf, q_start, 1)
+    path_1 = dis.placement(start_1, target_1, L, mu_fric, direction, h_table, alpha, urdf, q_start, 1, tip_link)
     print("path 1 done")
     if path_1:
         path_2 = dis.placement(path_1[-1], target_2, L, mu_fric, direction, h_table, alpha, urdf, path_1[-1].jointsPose,
-                               2)
+                               2, tip_link)
         print("path 2 done")
         if path_2:
             path_3 = dis.placement(path_2[-1], target_3, L, mu_fric, direction, h_table, alpha, urdf,
-                                   path_2[-1].jointsPose, 3)
+                                   path_2[-1].jointsPose, 3, tip_link)
             print("path 3 done")
             if path_3:
 
@@ -88,13 +90,13 @@ if q_start is not None:
                 ### smoothness trajectory ###
                 path_1 = hf.get_smooth_path_displacement_nodes(path_1, skip=6, t=np.linspace(0, 1, 10),
                                                                  L=L, direction=direction, urdf=urdf,
-                                                                 q_start=path_1[0].jointsPose)
+                                                                 q_start=path_1[0].jointsPose, tip_link=tip_link)
                 path_2 = hf.get_smooth_path_displacement_nodes(path_2, skip=6, t=np.linspace(0, 1, 10),
                                                                  L=L, direction=direction, urdf=urdf,
-                                                                 q_start=path_1[-1].jointsPose)
+                                                                 q_start=path_1[-1].jointsPose, tip_link=tip_link)
                 path_3 = hf.get_smooth_path_displacement_nodes(path_3, skip=6, t=np.linspace(0, 1, 10),
                                                                  L=L, direction=direction, urdf=urdf,
-                                                                 q_start=path_2[-1].jointsPose)
+                                                                 q_start=path_2[-1].jointsPose, tip_link=tip_link)
 
                 path = path_1 + path_2 + path_3
                 # add filter
@@ -104,7 +106,7 @@ if q_start is not None:
                 robot_joint_pose = hf.path_to_robot_joint_pose(path)
                 x, y, z = hf.get_path_shapes(path, L, direction)
                 # make animation
-                vis.animate_robot_and_cable_meshcat(urdf, robot_joint_pose, x, y, z, dt=0.1)
+                vis.animate_robot_and_cable_meshcat(urdf, robot_joint_pose, x, y, z, dt=0.1, tip_link=tip_link)
                 vis.plot_graphs(path_1, path_2, path_3, direction)
 else:
     print("there is no feasible joints path")

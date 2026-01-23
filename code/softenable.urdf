@@ -823,8 +823,15 @@
   </joint>
   <joint name="left_tip_placement" type="fixed">
     <parent link="dlr_gripper_center"/>
-    <child link="placement_link"/>
+    <child link="left_placement_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.025 0.1"/>
   </joint>
-  <link name="placement_link"/>
+  <link name="left_placement_link"/>
+
+  <joint name="right_tip_placement" type="fixed">
+    <parent link="dlr_gripper_center"/>
+    <child link="right_placement_link"/>
+    <origin rpy="0.0 0.0 3.141592653589793" xyz="0.0 -0.025 0.1"/>
+  </joint>
+  <link name="right_placement_link"/>
 </robot>

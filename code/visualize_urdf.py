@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import utils as hf
 
 
-def plot_static_robot_config(q, X0, Y0, Z0):
+def plot_static_robot_config(q, X0, Y0, Z0, tip_link):
     """
     Display a static robot configuration q using Meshcat.
     The function does NOT block the rest of the program.
@@ -75,10 +75,10 @@ def plot_static_robot_config(q, X0, Y0, Z0):
     # ---------------------------------------------------------------
     pin.forwardKinematics(model, data, q)
     pin.updateFramePlacements(model, data)
-    placement_id = model.getFrameId("placement_link")
+    placement_id = model.getFrameId(tip_link)
 
-    viz.viewer["frames/placement_link"].set_object(g.triad(0.1))
-    viz.viewer["frames/placement_link"].set_transform(
+    viz.viewer[f"frames/{tip_link}"].set_object(g.triad(0.1))
+    viz.viewer[f"frames/{tip_link}"].set_transform(
         data.oMf[placement_id].homogeneous
     )
 
@@ -87,7 +87,7 @@ def plot_static_robot_config(q, X0, Y0, Z0):
     print("Program continues running...\n")
 
 
-def animate_robot_and_cable_meshcat(urdf_path, robot_joint_pose, x, y, z, dt=0.03):
+def animate_robot_and_cable_meshcat(urdf_path, robot_joint_pose, x, y, z, dt=0.03, tip_link="left_placement_link"):
     """
     Visualize the robot (URDF) together with the flexible object (phantom)
     in Meshcat along a pre–computed trajectory, and show a moving
@@ -154,7 +154,7 @@ def animate_robot_and_cable_meshcat(urdf_path, robot_joint_pose, x, y, z, dt=0.0
         [0.0, 0.0],
         [0.0, 0.0],
     ])
-    viz.viewer["frames/placement_link/x"].set_object(
+    viz.viewer[f"frames/{tip_link}/x"].set_object(
         g.Line(g.PointsGeometry(pts_x))
     )
 
@@ -164,7 +164,7 @@ def animate_robot_and_cable_meshcat(urdf_path, robot_joint_pose, x, y, z, dt=0.0
         [0.0, axis_len],
         [0.0, 0.0],
     ])
-    viz.viewer["frames/placement_link/y"].set_object(
+    viz.viewer[f"frames/{tip_link}/y"].set_object(
         g.Line(g.PointsGeometry(pts_y))
     )
 
@@ -174,12 +174,12 @@ def animate_robot_and_cable_meshcat(urdf_path, robot_joint_pose, x, y, z, dt=0.0
         [0.0, 0.0],
         [0.0, axis_len],
     ])
-    viz.viewer["frames/placement_link/z"].set_object(
+    viz.viewer[f"frames/{tip_link}/z"].set_object(
         g.Line(g.PointsGeometry(pts_z))
     )
 
     # Get the frame index of 'placement_link' once (we'll reuse it)
-    placement_id = model.getFrameId("placement_link")
+    placement_id = model.getFrameId(tip_link)
 
     # ------------------------------------------------------------------
     # 5. Main animation loop: robot + cable + moving frame
@@ -200,10 +200,9 @@ def animate_robot_and_cable_meshcat(urdf_path, robot_joint_pose, x, y, z, dt=0.0
         T = oMf.homogeneous  # 4x4 homogeneous transform
 
         # Apply the same transform to all three axis-objects
-        viz.viewer["frames/placement_link/x"].set_transform(T)
-        viz.viewer["frames/placement_link/y"].set_transform(T)
-        viz.viewer["frames/placement_link/z"].set_transform(T)
-
+        viz.viewer[f"frames/{tip_link}/x"].set_transform(T)
+        viz.viewer[f"frames/{tip_link}/y"].set_transform(T)
+        viz.viewer[f"frames/{tip_link}/z"].set_transform(T)
         # ---- Cable shape for this frame ----
         pts = np.vstack([x[i, :], y[i, :], z[i, :]])
         viz.viewer["cable"].set_object(

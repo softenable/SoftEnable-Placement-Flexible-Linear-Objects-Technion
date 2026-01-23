@@ -106,6 +106,7 @@ class Target:
         self.phi_L = phi_L
         self.l = l
         self.theta = theta
+        self.L = L
         self.father = []
 
 

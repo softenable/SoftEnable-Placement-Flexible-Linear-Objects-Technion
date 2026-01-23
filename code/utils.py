@@ -123,7 +123,7 @@ def where_to_put_neighbor(neighbor, open_list):
             index_b = mid - 1
     return index_a
 
-def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
+def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start, tip_link):
     """
     What the function do
     ____________________
@@ -143,7 +143,7 @@ def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
     -------
     Sorted open and close lists
     """
-    if check_node_disp(neighbor, bound, mode, q_start):
+    if check_node_disp(neighbor, bound, mode, q_start, tip_link):
         if not check_in_list(neighbor, close_list, bound):
             index = check_in_list(neighbor, open_list, bound)
             if index:
@@ -158,7 +158,7 @@ def get_neighbor(neighbor, open_list, close_list, bound, mode, q_start):
         close_list.append(neighbor)
     return open_list, close_list
 
-def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
+def get_star(x_best, open_list, close_list, bound, target, mode, q_start, tip_link):
     """
     What the function do
     ____________________
@@ -252,10 +252,10 @@ def get_star(x_best, open_list, close_list, bound, target, mode, q_start):
                              x_best.l - bound.dl, x_best, bound.alpha, bound.L, bound.displacment_diraction)
         neighbors = [n1, n2, n3, n4, n5, n6]
     for n in neighbors:
-        open_list, close_list = get_neighbor(n, open_list, close_list, bound, mode, q_start)
+        open_list, close_list = get_neighbor(n, open_list, close_list, bound, mode, q_start, tip_link=tip_link)
     return open_list, close_list
 
-def check_node_disp(node, Bound, mode, q_start):
+def check_node_disp(node, Bound, mode, q_start, tip_link):
     """
      What the function do
     ____________________
@@ -299,7 +299,7 @@ def check_node_disp(node, Bound, mode, q_start):
         print("somthing strainge!")
         check = 0
     if check:
-        check, q = IKFromURDF(Bound.urdf, node, q_start)
+        check, q = IKFromURDF(Bound.urdf, node, q_start, tip_link=tip_link)
         node.jointsPose = q
     return check
 
@@ -409,7 +409,7 @@ def get_smooth_path_displacement(path, skip, t, L, direction, urdf, q_start):
 
     return xs, ys, zs, phi_l_s, theta_s, ls, q
 
-def get_smooth_path_displacement_nodes(path, skip, t, L, direction, urdf, q_start):
+def get_smooth_path_displacement_nodes(path, skip, t, L, direction, urdf, q_start, tip_link):
     """
     Smooth a planned path by interpolating between nodes and solving IK at each
     interpolated step, returning a *path-like list of nodes* (same style as `path`).
@@ -430,6 +430,8 @@ def get_smooth_path_displacement_nodes(path, skip, t, L, direction, urdf, q_star
         URDF path.
     q_start : array-like
         Initial joint config (seed) for IK.
+    tip_link : str
+        Name of the tip link for IK.
 
     Returns
     -------
@@ -519,7 +521,7 @@ def get_smooth_path_displacement_nodes(path, skip, t, L, direction, urdf, q_star
             node.XL, node.YL, node.ZL, node.phi_L = XL, YL, ZL, phi_L
 
             # ---- solve IK relative to this node
-            ok, q_temp = IKFromURDF(urdf, node, q_temp)
+            ok, q_temp = IKFromURDF(urdf, node, q_temp, tip_link=tip_link)
             if not ok:
                 # Skip this sample if IK failed
                 continue
@@ -556,7 +558,7 @@ def get_gripper_path(path):
 
     return P, R
 
-def IKFromURDF(urdf: str, node, q_start):
+def IKFromURDF(urdf: str, node, q_start, tip_link):
     """
     Inverse kinematics that aligns the frame 'placement_link'
     with a desired SE3 pose computed from the node parameters.
@@ -587,7 +589,7 @@ def IKFromURDF(urdf: str, node, q_start):
     data = model.createData()
 
     # Frame id of placement_link
-    placement_id = model.getFrameId("placement_link")
+    placement_id = model.getFrameId(tip_link)
 
     # -----------------------------------------------------------
     # 2. Desired pose oMdes of placement_link in WORLD frame
@@ -678,7 +680,7 @@ def IKFromURDF(urdf: str, node, q_start):
     else:
         return False, None
 
-def find_feasible_q_and_targets(urdf, start, target_1, target_2, target_3, mu_min, mu_max, L_gal_min, L_gal_max, direction):
+def find_feasible_q_and_targets(urdf, start, target_1, target_2, target_3, mu_min, mu_max, L_gal_min, L_gal_max, direction, tip_link):
     model = pin.buildModelFromUrdf(urdf)
     max_iter = 5000
     i = 0
@@ -686,33 +688,33 @@ def find_feasible_q_and_targets(urdf, start, target_1, target_2, target_3, mu_mi
         if i >= max_iter:
             return target_2, target_3, None
         i += 1
-        check, qs = IKFromURDF(urdf, start, sample_random_q(model.lowerPositionLimit, model.upperPositionLimit))
+        check, qs = IKFromURDF(urdf, start, sample_random_q(model.lowerPositionLimit, model.upperPositionLimit), tip_link=tip_link)
         if check:
-            check, q1 = IKFromURDF(urdf, target_1, qs)
+            check, q1 = IKFromURDF(urdf, target_1, qs, tip_link=tip_link)
             if check:
-                check, q2 = IKFromURDF(urdf, target_2, q1)
+                check, q2 = IKFromURDF(urdf, target_2, q1, tip_link=tip_link)
                 if check:
-                    check, q3 = IKFromURDF(urdf, target_3, q2)
+                    check, q3 = IKFromURDF(urdf, target_3, q2, tip_link=tip_link)
                     if check:
                         return target_2, target_3, qs
                     else:
                         check, new_target_3, q3 = find_feasible_target(target_3, mu_min, mu_max, L_gal_min,
-                                                                       L_gal_max, direction, q2, urdf)
+                                                                       L_gal_max, direction, q2, urdf, tip_link=tip_link)
                         if check:
                             return target_2, new_target_3, qs
                 else:
-                    check, new_target_2, q2 = find_feasible_target(target_2, mu_min, mu_max, L_gal_min, L_gal_max, direction, q1, urdf)
+                    check, new_target_2, q2 = find_feasible_target(target_2, mu_min, mu_max, L_gal_min, L_gal_max, direction, q1, urdf, tip_link=tip_link)
                     if check:
-                        check, q3 = IKFromURDF(urdf, target_3, q2)
+                        check, q3 = IKFromURDF(urdf, target_3, q2, tip_link=tip_link)
                         if check:
                             return new_target_2, target_3, qs
                         else:
                             check, new_target_3, q3 = find_feasible_target(target_3, mu_min, mu_max, L_gal_min,
-                                                                           L_gal_max, direction, q2, urdf)
+                                                                           L_gal_max, direction, q2, urdf, tip_link=tip_link)
                             if check:
                                 return new_target_2, new_target_3, qs
 
-def find_feasible_target(target, mu_min, mu_max, L_gal_min, L_gal_max, direction, q_start, urdf):
+def find_feasible_target(target, mu_min, mu_max, L_gal_min, L_gal_max, direction, q_start, urdf, tip_link):
     max_iter = 1000
     i = 0
     if direction == "right":
@@ -727,7 +729,7 @@ def find_feasible_target(target, mu_min, mu_max, L_gal_min, L_gal_max, direction
         i += 1
         new_target = node_class.Target(target.X0, target.Y0, target.Z0, target.phi_0, target.theta, mu_rand,
                                        C * L_gal_rand, target.L_gal, target.l, target.L, direction)
-        check, q = IKFromURDF(urdf, new_target, q_start)
+        check, q = IKFromURDF(urdf, new_target, q_start, tip_link=tip_link)
         if check:
             return check, new_target, q
     return False, target, q_start
@@ -848,7 +850,7 @@ def moving_average_matrix(Q, w):
     return out
 
 
-def filter_path(path, urdf, window_size=5):
+def filter_path(path, urdf, tip_link, window_size=5):
     """
     Smooth the Cartesian, orientation, and JOINT trajectories
     inside a list of Node objects.
@@ -898,7 +900,7 @@ def filter_path(path, urdf, window_size=5):
         new_node.theta = theta_f[i]
         new_node.jointsPose = None
         new_node.father = []
-        check_IK, q = IKFromURDF(urdf, new_node,  Qf[i])
+        check_IK, q = IKFromURDF(urdf, new_node,  Qf[i], tip_link=tip_link)
         if check_IK:
             new_node.jointsPose = q
             path_filt.append(new_node)
